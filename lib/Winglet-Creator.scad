@@ -10,23 +10,71 @@ module CreateWinglet(){
     
 
     
-    difference(){
+   // difference(){
         translate([pt_start[0]-x_offset,winglet_y_pos,z_pos])
             rotate([-90,0,0])
                 winglet_design();
     
-        intersection(){
+    /*    intersection(){
             difference(){
                 wing_shell();
                 CreateAileron(); //We remove ailerons from wing if request
             }
             cube_cut(wing_root_mm + motor_arm_width+motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull);
         }    
-   }
+   }*/
    
    Create_winglet_connection();
 }
 
+
+//Module to draw the attach between winglet and wing
+module winglet_to_wing_attach(){
+
+    circle_radius = 4;
+    attach_height = 2;
+    attach_y = 9;
+    attach_x = 2;
+    z_pos = wing_root_mm + wing_mid_mm + motor_arm_width - winglet_to_wing_hull;
+    y_offset = -3.4;//-2.8;
+    x_offset = 2.9*aileron_thickness; // Offset from TE
+    all_pts_te = get_trailing_edge_points();
+    pt_te_top = find_interpolated_point(z_pos, all_pts_te);
+    x_pos = pt_te_top[0]-x_offset;
+    
+
+        translate([x_pos,y_offset,z_pos]) 
+            rotate([-90,0,0]){
+            translate([-attach_x/2,0,0]) cube([attach_x,attach_y,attach_height]);
+            translate([0,attach_y,0]) linear_extrude(height=attach_height) circle(r=circle_radius);
+            }
+
+}
+
+//Module to void the attach between winglet and wing
+module winglet_to_wing_attach_void(){
+
+    scale_up = 1.2;// We use this parameter to get space for the parts to imbricate
+    circle_radius = 4*scale_up;
+    attach_height = 2.5;
+    attach_y = 9;
+    attach_x = 2*scale_up;
+    z_pos = wing_root_mm + wing_mid_mm + motor_arm_width - winglet_to_wing_hull;
+    y_offset = -3.4;//-2.8;
+    x_offset = 2.9*aileron_thickness; // Offset from TE
+    all_pts_te = get_trailing_edge_points();
+    pt_te_top = find_interpolated_point(z_pos, all_pts_te);    
+    x_pos = pt_te_top[0]-x_offset;    
+
+    
+
+        translate([x_pos,y_offset,z_pos]) 
+            rotate([-90,0,0]){
+            translate([-attach_x/2,0,-10]) cube([attach_x,attach_y,attach_height+10]);
+            translate([0,attach_y,-10]) linear_extrude(height=attach_height+10) circle(r=circle_radius);
+            }
+
+}
 
 
 ///*** Function for connection between winglet to wing ***///

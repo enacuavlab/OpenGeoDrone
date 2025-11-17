@@ -357,13 +357,15 @@ module motor_arm_to_wing_attach(aero_grav_center){
 //Module to void the attach between motor arm and wing
 module motor_arm_to_wing_attach_void(aero_grav_center){
 
-    circle_radius = 4;
+    scale_up = 1.2;// We use this parameter to get space for the parts to imbricate
+    circle_radius = 4*scale_up;
     attach_height = 4;
     attach_y = 7;
-    attach_x = 2;
+    attach_x = 2*scale_up;
     x_pos = aero_grav_center[1] + motor_arm_grav_center_offset+15;
     z_pos = wing_root_mm +motor_arm_width+motor_arm_to_wing_hull;
     y_offset = -3;//-2.8;
+
     
 
         translate([x_pos,y_offset,z_pos]) 

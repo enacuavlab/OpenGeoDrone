@@ -358,7 +358,8 @@ module connection_mid_to_ailerons(connexion_void = false){
     cube_z = 0.00000001; //cube connection mid to aileron z dimension -> very low because we hull 2 surfaces together on top and bot side
     top_y_offset = 1.5; //Offset on y axis connexion top side -> use it at last setting
     bot_y_offset = 3; //Offset on y axis connexion bottom side -> use it at last setting
-    circle_radius = cube_y/4; //circle for getting the rounding on connection
+    circle_radius = cube_y/2; //circle for getting the rounding on connection
+    circle_radius_small = cube_y/3; // Parameter for ellipse
     circ_pos_x = cube_x/2.4; //circle position x
     circ_pos_y = cube_y/8; //circle position y
     bot_connection_gap_offset = cube_y/2; //gap parameter on bot side of gap between mid and ailerons
@@ -404,37 +405,56 @@ module connection_mid_to_ailerons(connexion_void = false){
                 hull() {
                 
                 translate([xy_wall_bot[0], xy_wall_bot[2]-cube_y/bot_y_offset, z_pos_bot])
-                    linear_extrude(height=cube_z) translate([circ_pos_x,-circ_pos_y,0]) circle(r=circle_radius);
+                    //linear_extrude(height=cube_z) translate([circ_pos_x,-circ_pos_y,0]) circle(r=circle_radius, $fn=64);
+                    linear_extrude(height = cube_z) 
+                    translate([circ_pos_x,-circ_pos_y,0])
+                    scale([1, circle_radius_small/circle_radius])
+                    circle(r = circle_radius, $fn=100); 
 
 
                 translate([xy_wall_top[0], xy_wall_top[2]-cube_y/top_y_offset, z_pos_top])
-                    linear_extrude(height=cube_z) translate([circ_pos_x,-circ_pos_y,0]) circle(r=circle_radius);
+                    //linear_extrude(height=cube_z) translate([circ_pos_x,-circ_pos_y,0]) circle(r=circle_radius, $fn=64);
+                    linear_extrude(height = cube_z) 
+                    translate([circ_pos_x,-circ_pos_y,0])
+                    scale([1, circle_radius_small/circle_radius])
+                    circle(r = circle_radius, $fn=100); 
           
                 }
             }  
         }
     } else if (connexion_void){
+    
+    hull(){// Hull to connect the polygon to circle
 
                 hull() {
                 
                 translate([xy_wall_bot[0], xy_wall_bot[2]-cube_y/bot_y_offset, z_pos_bot])
-                    linear_extrude(height=cube_z) translate([circ_pos_x,-circ_pos_y,0]) circle(r=circle_radius);
+                    //linear_extrude(height=cube_z) translate([circ_pos_x,-circ_pos_y,0]) circle(r=circle_radius, $fn=64);
+                    linear_extrude(height = cube_z) 
+                    translate([circ_pos_x,-circ_pos_y,0])
+                    scale([1, circle_radius_small/circle_radius])
+                    circle(r = circle_radius, $fn=100); 
 
                 translate([xy_wall_top[0], xy_wall_top[2]-cube_y/top_y_offset, z_pos_top])
-                    linear_extrude(height=cube_z) translate([circ_pos_x,-circ_pos_y,0]) circle(r=circle_radius);    
-
+                    //linear_extrude(height=cube_z) translate([circ_pos_x,-circ_pos_y,0]) circle(r=circle_radius, $fn=64);    
+                    linear_extrude(height = cube_z) 
+                    translate([circ_pos_x,-circ_pos_y,0])
+                    scale([1, circle_radius_small/circle_radius])
+                    circle(r = circle_radius, $fn=100); 
                 }
  
 
-                hull() {
+                hull() {//Hull to get the polygon along the wing 
                 
                 translate([xy_wall_bot[0]+circ_pos_x, xy_wall_bot[2]-cube_y/bot_y_offset, z_pos_bot])
                     linear_extrude(height=cube_z) polygon(points=[[-circle_radius,0],[circle_radius,0],[circle_radius+bot_connection_gap_offset,-xy_wall_top[2]+xy_wall_top[1]],[-circle_radius-bot_connection_gap_offset,-xy_wall_top[2]+xy_wall_top[1]]]);
 
-                translate([xy_wall_top[0]+circ_pos_x, xy_wall_top[2]-cube_y/top_y_offset, z_pos_top])
-                    linear_extrude(height=cube_z) polygon(points=[[-circle_radius,0],[circle_radius,0],[circle_radius+bot_connection_gap_offset,-xy_wall_top[2]+xy_wall_top[1]],[-circle_radius-bot_connection_gap_offset,-xy_wall_top[2]+xy_wall_top[1]]]);
 
-                }
+                translate([xy_wall_top[0]+circ_pos_x, xy_wall_top[2]-cube_y/top_y_offset, z_pos_top])
+                    linear_extrude(height=cube_z) polygon(points=[[-circle_radius-bot_connection_gap_offset,-xy_wall_top[2]+xy_wall_top[1] -1],[circle_radius+bot_connection_gap_offset,-xy_wall_top[2]+xy_wall_top[1]-1],[circle_radius+bot_connection_gap_offset,-xy_wall_top[2]+xy_wall_top[1]],[-circle_radius-bot_connection_gap_offset,-xy_wall_top[2]+xy_wall_top[1]]]);
+
+                }//End Hull to get the polygon along the wing 
+    }//End Hull to connect the polygon to circle
                
                
     }

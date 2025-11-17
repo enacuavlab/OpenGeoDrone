@@ -38,10 +38,8 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO 
-// Validate Ailerons junction : OK
-// Raccourcir spar 3 : OK 
-
-// transition from tip to wing
+// Bug wing and print + offset attach wing : OK
+// transition from tip to wing (remove wing to tip) : OK
 // Clean motor arm function
 // Correction servo
 // Clean too much param
@@ -49,9 +47,12 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 // Correction passage cable
 // Correction serrage spar main center more tight
+// Augmenter qualite global $fa = 5; $fs = 0.5;
+
 
 // Validation print :
 // - Ailerons mid junction
+// - motor arm wing attach
 
 
 //Later :
@@ -61,6 +62,7 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 // Readme and clean and comment function with parameters description
 // Structure Grid Mode 1 Adapat ? 
 // Optimize wing grid and hole vs mass
+// NVL implementation
 
 
 
@@ -78,11 +80,11 @@ Right_side = false;
 Aileron_part = false;
 Root_part = false;
 Mid_part = false;
-Tip_part = false;
+Tip_part = true;
 Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
-Motor_arm_back = true;
+Motor_arm_back = false;
 Center_part = false;
 Center_part_locker = false; 
 
@@ -199,7 +201,8 @@ winglet_center_line_perc = 70;
 washout_deg_winglet = 1.5;         // how many degrees of washout you want 0 for none
 washout_start_winglet = 60;      // where you would like the washout to start in mm from root
 washout_pivot_perc_winglet = 25; // Where the washout pivot point is percent from LE
-winglet_to_wing_hull = 10; //Length of hull for transition from winglet to wings
+winglet_to_wing_hull = 5; //Length of hull for transition from winglet to wings
+winglet_arm_attach_to_wing = true;
 
 use_custom_lead_edge_sweep_winglet = true;
 lead_edge_sweep_winglet = [ // ([z , x]
@@ -480,6 +483,10 @@ module wing_modif(aero_grav_center) {
             servo_block();
         
         if (motor_arm_attach_to_wing) motor_arm_to_wing_attach_void(aero_grav_center);
+        
+        if (winglet_arm_attach_to_wing) {
+        winglet_to_wing_attach_void(); 
+        winglet_main();}
     }
 }
 
@@ -557,7 +564,46 @@ module servo_block() {
 
 //Create Winglet
 module winglet_main() {
+
+    y_cube_winglet = 10; //Y dimension of the winglet taking in account for the hull
+    x_offset = 5;
+
     CreateWinglet();
+    winglet_to_wing_attach();
+    
+    all_pts_le = get_leading_edge_points();
+    all_pts_te = get_trailing_edge_points();
+    z_pos = wing_root_mm +motor_arm_width + wing_mid_mm;
+    
+    pt_le_top = find_interpolated_point(z_pos, all_pts_le);
+    pt_le__bot = find_interpolated_point(z_pos -winglet_to_wing_hull, all_pts_le);
+    
+    pt_te_top = find_interpolated_point(z_pos, all_pts_te);
+    pt_te_bot = find_interpolated_point(z_pos -winglet_to_wing_hull, all_pts_te);
+
+    
+    hull(){//connect winglet to wing
+            
+        intersection(){//We keep the winglet in connection with wings only
+        
+            CreateWinglet();
+            
+            translate([0,-100,z_pos])
+                cube([pt_te_top[0]-aileron_thickness-x_offset-aileron_cyl_radius,y_cube_winglet + 100,5000]);
+  
+        }//End of intersection
+                
+        intersection(){//We keep the wingshell slice at winglet_to_wing_hull distance from winglet to hull on it
+        
+            wing_shell();
+                    
+            translate([0,-2500,z_pos - winglet_to_wing_hull])
+                cube([pt_te_bot[0]-aileron_thickness-x_offset-aileron_cyl_radius,5000,0.0001]);
+                  
+        } //End of intersection
+            
+    }//End of hull
+    
 }
 
 
