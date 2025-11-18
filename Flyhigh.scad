@@ -38,20 +38,20 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO 
-// Bug wing and print + offset attach wing : OK
-// transition from tip to wing (remove wing to tip) : OK
-// Clean motor arm function
-// Correction servo
+// Clean motor arm function : OK
+// Winglet attach reduction : OK
+// Augmenter qualite global $fa = 5; $fs = 0.5; : Enlever le cylindre de l'aileron qui dépasse OK
+// Correction servo + Attach to wing servo
+// Agrandir piece central
 // Clean too much param
 
 
 // Correction passage cable
 // Correction serrage spar main center more tight
-// Augmenter qualite global $fa = 5; $fs = 0.5;
+
 
 
 // Validation print :
-// - Ailerons mid junction
 // - motor arm wing attach
 
 
@@ -80,13 +80,18 @@ Right_side = false;
 Aileron_part = false;
 Root_part = false;
 Mid_part = false;
-Tip_part = true;
-Mid_Aileron_part = false;
-Motor_arm_full = false;
+Tip_part = false;
+Mid_Aileron_part = true;
+Motor_arm_full = true;
 Motor_arm_front = false;
 Motor_arm_back = false;
 Center_part = false;
 Center_part_locker = false; 
+
+//**************** Quality settings **********//
+$fa = 2; //5; //Maximum angle between two segments. → Smaller = more segments = smoother.
+$fs = 0.2;//1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
+
 
 //****************Wing Airfoil settings**********//
 wing_sections = Full_system?6:20; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
@@ -131,7 +136,7 @@ gravity_center_plot = false; //Green
 
 
 //**************** Fuselage and center part **********//
-center_width = 55;
+center_width = 80; //55;
 center_length = 210;
 center_height = 8;
 //******//
@@ -283,14 +288,14 @@ sweep_angle_3rd_spar = 2.04*sweep_angle/3;
 
 
 //**************** Servo settings **********//  
-servo_dimension_perso = [23,8,30.9];//[23,8,27.3]; 
+servo_dimension_perso = [23,8,70];//[23,8,27.3]; 
 all_pts_servo = get_trailing_edge_points();
 pt_start_servo = find_interpolated_point(wing_root_mm, all_pts_servo);
 
 create_servo = true; // It is important to check that your servo placement doesnt create any artifacts(You can
 // comment out the CreateWing() function to assist)
 servo_type = 4;           // 1=3.7g 2=5g 3=9g 4=perso
-servo_dist_root_mm = wing_root_mm+ 0.0;//-6.65; // servo placement from root
+servo_dist_root_mm = wing_root_mm-20; // servo placement from root
 servo_dist_le_mm = pt_start_servo[0]-37.5;    // servo placement from the leading edge
 servo_rotate_z_deg = -0;  // degrees to rotate on z axis
 servo_dist_depth_mm = -0; // offset the servo into or out of the wing till you dont see red
@@ -329,9 +334,6 @@ aileron_end_z = wing_root_mm + motor_arm_width + wing_mid_mm; // Aileron dimensi
 
 
 //**************** Other settings **********//
-$fa = 5; // 360deg/5($fa) = 60 facets this affects performance and object shoothness
-$fs = 1; // Min facet size
-
 slice_ext_width = 0.6;//Used for some of the interfacing and gap width values
 slice_gap_width = 0.01;//This is the gap in the outer skin.(smaller is better but is limited by what your slicer can recognise)
 debug_leading_trailing_edge = false;
@@ -410,10 +412,10 @@ module wing_main(aero_grav_center) {
             winglet_main();
             
         if(Mid_Aileron_part) {
-            intersection() {
+            difference() {
                 main_create_ailerons();
-                //wing_cut_sections(); 
-            }//End intersection Mid_Aileron_part       
+                connection_mid_to_ailerons(connexion_void = true);
+            }//End difference Mid_Aileron_part       
         }//End if Mid_Aileron_part
         
     }
@@ -460,7 +462,7 @@ module wing_voids() {
         if (spar_hole) wing_spar_voids();
         if (create_aileron) Ailerons_pin_void();
         if (create_winglet) Create_winglet_connection_void();
-        if (create_servo) servo_void_block();
+        //if (create_servo) servo_void_block();
     }
 }
 
@@ -476,17 +478,16 @@ module wing_modif(aero_grav_center) {
         if (create_aileron && !Aileron_part && !Full_system)
             CreateAileronVoid();
 
-        if (spar_hole)
-            wing_spar_holes();
+        if (spar_hole) wing_spar_holes();
 
-        if (create_servo)
-            servo_block();
+        //if (create_servo) servo_block();
         
         if (motor_arm_attach_to_wing) motor_arm_to_wing_attach_void(aero_grav_center);
         
         if (winglet_arm_attach_to_wing) {
-        winglet_to_wing_attach_void(); 
-        winglet_main();}
+            winglet_to_wing_attach_void(); 
+            winglet_main(); //remove the overlapping part of wing on winglet
+        }
     }
 }
 
@@ -501,7 +502,7 @@ module main_create_ailerons() {
         difference() {
             wing_shell();
             if (add_inner_grid) wing_inner_grid();
-            if (create_servo) servo_block();
+            //if (create_servo) servo_block();
         }
         if (create_aileron) CreateAileron();
         cube_cut(wing_root_mm + motor_arm_width + motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull-ailerons_z_end_offset); //We remove the part in superposition with the motor arm    
@@ -562,49 +563,6 @@ module servo_block() {
     }
 }
 
-//Create Winglet
-module winglet_main() {
-
-    y_cube_winglet = 10; //Y dimension of the winglet taking in account for the hull
-    x_offset = 5;
-
-    CreateWinglet();
-    winglet_to_wing_attach();
-    
-    all_pts_le = get_leading_edge_points();
-    all_pts_te = get_trailing_edge_points();
-    z_pos = wing_root_mm +motor_arm_width + wing_mid_mm;
-    
-    pt_le_top = find_interpolated_point(z_pos, all_pts_le);
-    pt_le__bot = find_interpolated_point(z_pos -winglet_to_wing_hull, all_pts_le);
-    
-    pt_te_top = find_interpolated_point(z_pos, all_pts_te);
-    pt_te_bot = find_interpolated_point(z_pos -winglet_to_wing_hull, all_pts_te);
-
-    
-    hull(){//connect winglet to wing
-            
-        intersection(){//We keep the winglet in connection with wings only
-        
-            CreateWinglet();
-            
-            translate([0,-100,z_pos])
-                cube([pt_te_top[0]-aileron_thickness-x_offset-aileron_cyl_radius,y_cube_winglet + 100,5000]);
-  
-        }//End of intersection
-                
-        intersection(){//We keep the wingshell slice at winglet_to_wing_hull distance from winglet to hull on it
-        
-            wing_shell();
-                    
-            translate([0,-2500,z_pos - winglet_to_wing_hull])
-                cube([pt_te_bot[0]-aileron_thickness-x_offset-aileron_cyl_radius,5000,0.0001]);
-                  
-        } //End of intersection
-            
-    }//End of hull
-    
-}
 
 
 //-----------------------------------------------------------
@@ -633,240 +591,30 @@ module cube_cut(start_z, len_z) {
 // MAIN MOTOR ARM MODULE
 //-----------------------------------------------------------
 module motor_arm_main(aero_grav_center) {
-
-    all_pts_le = get_leading_edge_points();
-    all_pts_te = get_trailing_edge_points();
-
-    pt_le_leftside_top = find_interpolated_point(wing_root_mm +motor_arm_width +motor_arm_to_wing_hull, all_pts_le);
-    pt_le_leftside_bot = find_interpolated_point(wing_root_mm +motor_arm_width/2, all_pts_le);
-    pt_le_rightside_top = find_interpolated_point(wing_root_mm, all_pts_le);
-    pt_le_rightside_bot = find_interpolated_point(wing_root_mm - motor_arm_to_wing_hull , all_pts_le);
-    pt_te_leftside_top = find_interpolated_point(wing_root_mm +motor_arm_width +motor_arm_to_wing_hull, all_pts_te);
-    pt_te_leftside_bot = find_interpolated_point(wing_root_mm +motor_arm_width/2, all_pts_te);
-    pt_te_rightside_top = find_interpolated_point(wing_root_mm, all_pts_te);
-    pt_te_rightside_bot = find_interpolated_point(wing_root_mm - motor_arm_to_wing_hull , all_pts_te);
-    
-    x_position_front_back = aero_grav_center[1] + motor_arm_grav_center_offset;
-    magical_coeff = 0.4; // == 2*(1-0.8) where 0.8 is the z position of end of lock and the 2 times correspond the the mid maj axis
-    
-    
-
-    
+ 
+       
     if(Motor_arm_full || Motor_arm_front || Motor_arm_back || Full_system){
         difference() {
-        union(){
-            motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
-    
-        difference() {
-        
-            hull(){//left side motor arm hull
-            
-                intersection(){//We keep the motor arm in connection with wings only
-                    motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
-                    if(Motor_arm_front){
-                        translate([pt_le_leftside_bot[0],-2500,wing_root_mm + motor_arm_width-magical_coeff*ellipse_maj_ax])
-                            cube([x_position_front_back-pt_le_leftside_bot[0],5000,5000]);
-                    }
-                    if(Motor_arm_back){
-                        translate([x_position_front_back,-2500,wing_root_mm + motor_arm_width-magical_coeff*ellipse_maj_ax])
-                            cube([pt_te_leftside_bot[0]-x_position_front_back,5000,5000]);
-                    }
-                    if(Motor_arm_full || Full_system){
-                        translate([pt_le_leftside_bot[0],-2500,wing_root_mm + motor_arm_width-magical_coeff*ellipse_maj_ax])
-                            cube([pt_te_leftside_bot[0]-pt_le_leftside_bot[0],5000,5000]);
-                    }
-                }//End of intersection
-                
-                intersection(){//We keep the wingshell slice at motor_arm_to_wing_hull distance from motor arm to hull on it
-                    wing_shell();
-                    if(Motor_arm_front){
-                        translate([pt_le_leftside_top[0],-2500,wing_root_mm + motor_arm_width+motor_arm_to_wing_hull])
-                            cube([x_position_front_back-pt_le_leftside_top[0],5000,0.0001]);
-                    }
-                    if(Motor_arm_back){
-                        translate([x_position_front_back,-2500,wing_root_mm + motor_arm_width+motor_arm_to_wing_hull])
-                            cube([pt_te_leftside_top[0]-x_position_front_back,5000,0.0001]);
-                    } 
-                    if(Motor_arm_full || Full_system){
-                        translate([pt_le_leftside_top[0],-2500,wing_root_mm + motor_arm_width+motor_arm_to_wing_hull])
-                            cube([pt_te_leftside_top[0]-pt_le_leftside_top[0],5000,0.0001]);
-                    }                    
-                } //End of intersection
-            
-            }//End of hull
-            motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
-            
-        }           
-            
-            
-      difference() {
-      
-            hull(){//right side motor arm hull
-            
-                intersection(){//We keep the motor arm in connection with wings only
-                    motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
-                    if(Motor_arm_front){
-                        translate([pt_le_rightside_top[0],-2500,wing_root_mm + magical_coeff*ellipse_maj_ax-5000])
-                            cube([x_position_front_back-pt_le_rightside_top[0],5000,5000]);
-                    }
-                    if(Motor_arm_back){
-                        translate([x_position_front_back,-2500,wing_root_mm + magical_coeff*ellipse_maj_ax-5000])
-                            cube([pt_te_rightside_top[0]-x_position_front_back,5000,5000]);
-                    }  
-                    if(Motor_arm_full || Full_system){
-                        translate([pt_le_rightside_top[0],-2500,wing_root_mm + magical_coeff*ellipse_maj_ax-5000])
-                            cube([pt_te_rightside_top[0]-pt_le_rightside_top[0],5000,5000]);
-                    }                    
-                }//End of intersection
-                
-                intersection(){//We keep the wingshell slice at motor_arm_to_wing_hull distance from motor arm to hull on it
-                    wing_shell();
-                    if(Motor_arm_front){
-                        translate([pt_le_rightside_bot[0],-2500,wing_root_mm -motor_arm_to_wing_hull])
-                            cube([x_position_front_back-pt_le_rightside_bot[0],5000,0.0001]);
-                    }
-                    if(Motor_arm_back){
-                        translate([x_position_front_back,-2500,wing_root_mm -motor_arm_to_wing_hull])
-                            cube([pt_te_rightside_bot[0]-x_position_front_back,5000,0.0001]);
-                    }    
-                    if(Motor_arm_full || Full_system){
-                        translate([pt_le_rightside_bot[0],-2500,wing_root_mm -motor_arm_to_wing_hull])
-                            cube([pt_te_rightside_bot[0]-pt_le_rightside_bot[0],5000,0.0001]);
-                    }                      
-                } //End of intersection
-            
-            }//End of hull
-            motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
-            
-        }   
-  
-  
-            
-        }//End of union
-        //We remove the spar from the motor arms
-        wing_spar_holes();
-        //We remove the servo from the motor arms
-        if (create_servo) servo_block();
+                 
+            CreateMotorArm(aero_grav_center);                   
+            wing_spar_holes(); //We remove the spar from the motor arms           
+            if (create_servo) servo_block(); //We remove the servo from the motor arms
             
          }//End of difference
      }//End if
 
 }
 
-/*
-module motor_arm_main(aero_grav_center) {
 
-    // --- Precomputed reference points ---
-    all_pts_le = get_leading_edge_points();
-    all_pts_te = get_trailing_edge_points();
+//-----------------------------------------------------------
+// MAIN WINGLET MODULE
+//-----------------------------------------------------------
+module winglet_main() {
 
-    pt_le_leftside_top = find_interpolated_point(wing_root_mm +motor_arm_width +motor_arm_to_wing_hull, all_pts_le);
-    pt_le_leftside_bot = find_interpolated_point(wing_root_mm +motor_arm_width/2, all_pts_le);
-    pt_le_rightside_top = find_interpolated_point(wing_root_mm, all_pts_le);
-    pt_le_rightside_bot = find_interpolated_point(wing_root_mm - motor_arm_to_wing_hull , all_pts_le);
-    pt_te_leftside_top = find_interpolated_point(wing_root_mm +motor_arm_width +motor_arm_to_wing_hull, all_pts_te);
-    pt_te_leftside_bot = find_interpolated_point(wing_root_mm +motor_arm_width/2, all_pts_te);
-    pt_te_rightside_top = find_interpolated_point(wing_root_mm, all_pts_te);
-    pt_te_rightside_bot = find_interpolated_point(wing_root_mm - motor_arm_to_wing_hull , all_pts_te);
-
-    x_position_front_back = aero_grav_center[1] + motor_arm_grav_center_offset;
-    magical_coeff = 0.4;
-
-    // --- Only generate geometry if any section is active ---
-    if (Motor_arm_full || Motor_arm_front || Motor_arm_back || Full_system) {
-
-        difference() {
-            union() {
-                // Base motor arm
-                motor_arm(
-                    ellipse_maj_ax, ellipse_min_ax,
-                    motor_arm_length_front, motor_arm_length_back,
-                    motor_arm_height, motor_arm_tilt_angle,
-                    motor_arm_screw_fit_offset, aero_grav_center,
-                    motor_arm_grav_center_offset, motor_arm_y_offset,
-                    back = Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full
-                );
-
-                // Left and right sides
-                motor_arm_side(true);
-                motor_arm_side(false);
-            }
-
-            // Remove internals
-            wing_spar_holes();
-            if (create_servo) servo_block();
-        }
-    }
-
-    // --- Internal helper module for each side ---
-    module motor_arm_side(isLeft) {
-        sign = isLeft ? 1 : -1;
-
-        // Define top/bottom points dynamically based on side
-        pt_le_top = isLeft ? pt_le_leftside_top : pt_le_rightside_top;
-        pt_te_top = isLeft ? pt_te_leftside_top : pt_te_rightside_top;
-        pt_le_bot = isLeft ? pt_le_leftside_bot : pt_le_rightside_bot;
-        pt_te_bot = isLeft ? pt_te_leftside_bot : pt_te_rightside_bot;
-
-        z_offset_top = wing_root_mm + sign * (motor_arm_width + motor_arm_to_wing_hull);
-        z_offset_bot = wing_root_mm + sign * (motor_arm_width - magical_coeff * ellipse_maj_ax);
-        z_offset_shell = wing_root_mm + sign * motor_arm_to_wing_hull;
-
-        difference() {
-            hull() {
-                // --- Motor arm intersection with wing ---
-                intersection() {
-                    motor_arm(
-                        ellipse_maj_ax, ellipse_min_ax,
-                        motor_arm_length_front, motor_arm_length_back,
-                        motor_arm_height, motor_arm_tilt_angle,
-                        motor_arm_screw_fit_offset, aero_grav_center,
-                        motor_arm_grav_center_offset, motor_arm_y_offset,
-                        back = Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full
-                    );
-
-                    generate_section(pt_le_bot, pt_te_bot, z_offset_bot);
-                }
-
-                // --- Wing shell slice ---
-                intersection() {
-                    wing_shell();
-                    generate_section(pt_le_top, pt_te_top, z_offset_top, thin = true);
-                }
-            }
-
-            // Remove internal full motor arm volume
-            motor_arm(
-                ellipse_maj_ax, ellipse_min_ax,
-                motor_arm_length_front, motor_arm_length_back,
-                motor_arm_height, motor_arm_tilt_angle,
-                motor_arm_screw_fit_offset, aero_grav_center,
-                motor_arm_grav_center_offset, motor_arm_y_offset,
-                back = false, front = false, full = true
-            );
-        }
-    }
-
-    // --- Helper to generate the front/back/full bounding cube ---
-    module generate_section(pt_le, pt_te, z_offset, thin = false) {
-        thickness = thin ? 0.0001 : 5000;
-        depth = 5000;
-        y_pos = -2500;
-
-        if (Motor_arm_front)
-            translate([pt_le[0], y_pos, z_offset])
-                cube([x_position_front_back - pt_le[0], depth, thickness]);
-
-        if (Motor_arm_back)
-            translate([x_position_front_back, y_pos, z_offset])
-                cube([pt_te[0] - x_position_front_back, depth, thickness]);
-
-        if (Motor_arm_full || Full_system)
-            translate([pt_le[0], y_pos, z_offset])
-                cube([pt_te[0] - pt_le[0], depth, thickness]);
-    }
+    CreateWinglet();
 }
-*/
+
+
 //-----------------------------------------------------------
 // MAIN CENTER PART MODULE
 //-----------------------------------------------------------
@@ -975,4 +723,4 @@ else
     
 } //End if main
 
-
+//connection_mid_to_ailerons(connexion_void = false, ribs_void = true);

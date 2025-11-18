@@ -23,7 +23,7 @@ main_stage_y_width = 2*ct_height/3;
 gravity_line_width = 1;
 gravity_line_height = 0.2;
 
-battery_width = 50;
+battery_width = 70;
 battery_hole_width = 8;
 battery_hole_length = 25;
 battery_x_pos_1 = 100;
@@ -146,11 +146,11 @@ module rear_spar_main_stage_removal(rear_spar_locker_mode){
      }
 
 
-        translate([tawaki_esc_space+2*esc_ext_pin_rad, 0,-ct_width/2+esc_pin_space_width/2 + 2*esc_ext_pin_rad])
+        translate([tawaki_esc_space+1.5*esc_ext_pin_rad, 0,-ct_width/2+esc_pin_space_width/2 + 4*esc_ext_pin_rad])
             rotate([90,0,0])
                 cylinder(h = 6*ct_height, r = main_part_rear_spar_screw_radius, center = true);
                             
-        translate([tawaki_esc_space+2*esc_ext_pin_rad, 0,-ct_width/2-esc_pin_space_width/2 - 2*esc_ext_pin_rad])
+        translate([tawaki_esc_space+1.5*esc_ext_pin_rad, 0,-ct_width/2-esc_pin_space_width/2 - 4*esc_ext_pin_rad])
             rotate([90,0,0])
                 cylinder(h = 6*ct_height, r = main_part_rear_spar_screw_radius, center = true);
 

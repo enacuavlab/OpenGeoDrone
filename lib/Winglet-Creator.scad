@@ -1,30 +1,53 @@
 ///*** Create Winglet like a Wing ***///
 
 ///*** Main ***///
-module CreateWinglet(){
+module CreateWinglet() {
 
-    points_le = get_leading_edge_points();
-    z_pos = wing_root_mm + wing_mid_mm + motor_arm_width;
-    pt_start = find_interpolated_point(z_pos, points_le);   
-    x_offset = 7;
+    y_cube_winglet = 10; //Y dimension of the winglet taking in account for the hull
+    x_offset = 5; // Offset on winglet cut for hull
+    x_offset_winglet = 7; //Offset on winglet position to the wing
     
+    all_pts_le = get_leading_edge_points();
+    all_pts_te = get_trailing_edge_points();
+    z_pos = wing_root_mm +motor_arm_width + wing_mid_mm;
+    
+    pt_le_top = find_interpolated_point(z_pos, all_pts_le);
+    pt_le__bot = find_interpolated_point(z_pos -winglet_to_wing_hull, all_pts_le);
+    
+    pt_te_top = find_interpolated_point(z_pos, all_pts_te);
+    pt_te_bot = find_interpolated_point(z_pos -winglet_to_wing_hull, all_pts_te);
 
+    //Create winglet and attach
+    translate([pt_le_top[0]-x_offset_winglet,winglet_y_pos,z_pos])
+        rotate([-90,0,0])
+            winglet_design();
+    Create_winglet_connection();            
+    winglet_to_wing_attach();  
+
+    hull(){//connect winglet to wing
+            
+        intersection(){//We keep the winglet in connection with wings only
+        
+            translate([pt_le_top[0]-x_offset_winglet,winglet_y_pos,z_pos])
+                rotate([-90,0,0])
+                    winglet_design();
+            
+            translate([0,-100,z_pos])
+                cube([pt_te_top[0]-aileron_thickness-x_offset-aileron_cyl_radius,y_cube_winglet + 100,5000]);
+  
+        }//End of intersection
+                
+        intersection(){//We keep the wingshell slice at winglet_to_wing_hull distance from winglet to hull on it
+        
+            wing_shell();
+                    
+            translate([0,-2500,z_pos - winglet_to_wing_hull])
+                cube([pt_te_bot[0]-aileron_thickness-x_offset-aileron_cyl_radius,5000,0.0001]);
+                  
+        } //End of intersection
+            
+    }//End of hull
     
-   // difference(){
-        translate([pt_start[0]-x_offset,winglet_y_pos,z_pos])
-            rotate([-90,0,0])
-                winglet_design();
-    
-    /*    intersection(){
-            difference(){
-                wing_shell();
-                CreateAileron(); //We remove ailerons from wing if request
-            }
-            cube_cut(wing_root_mm + motor_arm_width+motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull);
-        }    
-   }*/
-   
-   Create_winglet_connection();
 }
 
 
@@ -33,7 +56,7 @@ module winglet_to_wing_attach(){
 
     circle_radius = 4;
     attach_height = 2;
-    attach_y = 9;
+    attach_y = 8.3;
     attach_x = 2;
     z_pos = wing_root_mm + wing_mid_mm + motor_arm_width - winglet_to_wing_hull;
     y_offset = -3.4;//-2.8;
@@ -83,31 +106,16 @@ module Create_winglet_connection(cube_for_vase = false)
     
     points_le = get_leading_edge_points();
     z_pos = wing_root_mm + wing_mid_mm + motor_arm_width;
+    pt_start = find_interpolated_point(z_pos, points_le);
 
     cube_for_vase_y1 = attached_1_radius*10;
     cube_for_vase_z1 = attached_1_length;
     cube_for_vase_y2 = attached_2_radius*10;
-    cube_for_vase_z2 = attached_2_length;    
-
-
-
-  
-    function interpolate_pt(p1, p2, target_z) =
-        let (dz = p2[2] - p1[2], t = (target_z - p1[2]) / dz)
-        [ p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1]), target_z ];
-
-    function find_interpolated_point(target_z, pts) =
-        let (
-            pairs = [for (i = [0 : len(pts) - 2]) [pts[i], pts[i+1]]],
-            valid = [ for (pr = pairs) if ((pr[0][2] <= target_z && target_z <= pr[1][2]) || (pr[1][2] <= target_z && target_z <= pr[0][2])) pr ]
-        )
-        (len(valid) > 0) ? interpolate_pt(valid[0][0], valid[0][1], target_z) : undef;
-
-    pt_start = find_interpolated_point(z_pos, points_le);
+    cube_for_vase_z2 = attached_2_length;   
+   
+    scale_factor = 0.8; //Factor to decrease length of cylinder connection to avoid too tight junction
     
 
-
-    
     translate([pt_start[0]-attached_1_x_pos,attached_1_y_pos,z_pos+attached_z_offset]){
         rotate([180,sweep_angle,0])
             color("green") 
@@ -115,7 +123,7 @@ module Create_winglet_connection(cube_for_vase = false)
                 cylinder(h = attached_1_length, r = attached_1_radius*winglet_attach_dilatation_offset_PLA, center = false);
             }
             else {
-                 cylinder(h = attached_1_length, r = attached_1_radius, center = false);
+                 cylinder(h = attached_1_length*scale_factor, r = attached_1_radius, center = false);
             }
                 
             if(cube_for_vase){
@@ -134,7 +142,7 @@ module Create_winglet_connection(cube_for_vase = false)
                 cylinder(h = attached_2_length, r = attached_2_radius*winglet_attach_dilatation_offset_PLA, center = false);
             }
             else {
-                 cylinder(h = attached_2_length, r = attached_2_radius, center = false);
+                 cylinder(h = attached_2_length*scale_factor, r = attached_2_radius, center = false);
             }
             
             if(cube_for_vase){
@@ -153,22 +161,8 @@ module Create_winglet_connection_void()
 
     points_le = get_leading_edge_points();
     z_pos = wing_root_mm + wing_mid_mm + motor_arm_width;
-   
-    
-    
-  
-    function interpolate_pt(p1, p2, target_z) =
-        let (dz = p2[2] - p1[2], t = (target_z - p1[2]) / dz)
-        [ p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1]), target_z ];
-
-    function find_interpolated_point(target_z, pts) =
-        let (
-            pairs = [for (i = [0 : len(pts) - 2]) [pts[i], pts[i+1]]],
-            valid = [ for (pr = pairs) if ((pr[0][2] <= target_z && target_z <= pr[1][2]) || (pr[1][2] <= target_z && target_z <= pr[0][2])) pr ]
-        )
-        (len(valid) > 0) ? interpolate_pt(valid[0][0], valid[0][1], target_z) : undef;
-
     pt_start = find_interpolated_point(z_pos, points_le);
+    
 
     translate([pt_start[0]-attached_1_x_pos,attached_1_y_pos,z_pos+attached_z_offset])
         rotate([180,sweep_angle,0])

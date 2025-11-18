@@ -1,3 +1,110 @@
+module CreateMotorArm(aero_grav_center){
+
+    all_pts_le = get_leading_edge_points();
+    all_pts_te = get_trailing_edge_points();
+
+    pt_le_leftside_top = find_interpolated_point(wing_root_mm +motor_arm_width +motor_arm_to_wing_hull, all_pts_le);
+    pt_le_leftside_bot = find_interpolated_point(wing_root_mm +motor_arm_width/2, all_pts_le);
+    pt_le_rightside_top = find_interpolated_point(wing_root_mm, all_pts_le);
+    pt_le_rightside_bot = find_interpolated_point(wing_root_mm - motor_arm_to_wing_hull , all_pts_le);
+    pt_te_leftside_top = find_interpolated_point(wing_root_mm +motor_arm_width +motor_arm_to_wing_hull, all_pts_te);
+    pt_te_leftside_bot = find_interpolated_point(wing_root_mm +motor_arm_width/2, all_pts_te);
+    pt_te_rightside_top = find_interpolated_point(wing_root_mm, all_pts_te);
+    pt_te_rightside_bot = find_interpolated_point(wing_root_mm - motor_arm_to_wing_hull , all_pts_te);
+    
+    x_position_front_back = aero_grav_center[1] + motor_arm_grav_center_offset;
+    magical_coeff = 0.4; // == 2*(1-0.8) where 0.8 is the z position of end of lock and the 2 times correspond the the mid maj axis
+
+
+motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
+    
+        difference() {
+        
+            hull(){//left side motor arm hull
+            
+                intersection(){//We keep the motor arm in connection with wings only
+                    motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
+                    if(Motor_arm_front){
+                        translate([pt_le_leftside_bot[0],-2500,wing_root_mm + motor_arm_width-magical_coeff*ellipse_maj_ax])
+                            cube([x_position_front_back-pt_le_leftside_bot[0],5000,5000]);
+                    }
+                    if(Motor_arm_back){
+                        translate([x_position_front_back,-2500,wing_root_mm + motor_arm_width-magical_coeff*ellipse_maj_ax])
+                            cube([pt_te_leftside_bot[0]-x_position_front_back,5000,5000]);
+                    }
+                    if(Motor_arm_full || Full_system){
+                        translate([pt_le_leftside_bot[0],-2500,wing_root_mm + motor_arm_width-magical_coeff*ellipse_maj_ax])
+                            cube([pt_te_leftside_bot[0]-pt_le_leftside_bot[0],5000,5000]);
+                    }
+                }//End of intersection
+                
+                intersection(){//We keep the wingshell slice at motor_arm_to_wing_hull distance from motor arm to hull on it
+                    wing_shell();
+                    if(Motor_arm_front){
+                        translate([pt_le_leftside_top[0],-2500,wing_root_mm + motor_arm_width+motor_arm_to_wing_hull])
+                            cube([x_position_front_back-pt_le_leftside_top[0],5000,0.0001]);
+                    }
+                    if(Motor_arm_back){
+                        translate([x_position_front_back,-2500,wing_root_mm + motor_arm_width+motor_arm_to_wing_hull])
+                            cube([pt_te_leftside_top[0]-x_position_front_back,5000,0.0001]);
+                    } 
+                    if(Motor_arm_full || Full_system){
+                        translate([pt_le_leftside_top[0],-2500,wing_root_mm + motor_arm_width+motor_arm_to_wing_hull])
+                            cube([pt_te_leftside_top[0]-pt_le_leftside_top[0],5000,0.0001]);
+                    }                    
+                } //End of intersection
+            
+            }//End of hull
+            motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
+            
+        }           
+            
+            
+      difference() {
+      
+            hull(){//right side motor arm hull
+            
+                intersection(){//We keep the motor arm in connection with wings only
+                    motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
+                    if(Motor_arm_front){
+                        translate([pt_le_rightside_top[0],-2500,wing_root_mm + magical_coeff*ellipse_maj_ax-5000])
+                            cube([x_position_front_back-pt_le_rightside_top[0],5000,5000]);
+                    }
+                    if(Motor_arm_back){
+                        translate([x_position_front_back,-2500,wing_root_mm + magical_coeff*ellipse_maj_ax-5000])
+                            cube([pt_te_rightside_top[0]-x_position_front_back,5000,5000]);
+                    }  
+                    if(Motor_arm_full || Full_system){
+                        translate([pt_le_rightside_top[0],-2500,wing_root_mm + magical_coeff*ellipse_maj_ax-5000])
+                            cube([pt_te_rightside_top[0]-pt_le_rightside_top[0],5000,5000]);
+                    }                    
+                }//End of intersection
+                
+                intersection(){//We keep the wingshell slice at motor_arm_to_wing_hull distance from motor arm to hull on it
+                    wing_shell();
+                    if(Motor_arm_front){
+                        translate([pt_le_rightside_bot[0],-2500,wing_root_mm -motor_arm_to_wing_hull])
+                            cube([x_position_front_back-pt_le_rightside_bot[0],5000,0.0001]);
+                    }
+                    if(Motor_arm_back){
+                        translate([x_position_front_back,-2500,wing_root_mm -motor_arm_to_wing_hull])
+                            cube([pt_te_rightside_bot[0]-x_position_front_back,5000,0.0001]);
+                    }    
+                    if(Motor_arm_full || Full_system){
+                        translate([pt_le_rightside_bot[0],-2500,wing_root_mm -motor_arm_to_wing_hull])
+                            cube([pt_te_rightside_bot[0]-pt_le_rightside_bot[0],5000,0.0001]);
+                    }                      
+                } //End of intersection
+            
+            }//End of hull
+            motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
+            
+        } 
+        
+}
+
+
+
 module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_height, arm_tilt_angle, arm_screw_fit_offset, aero_grav_center, grav_center_offset, y_offset, back = false, front = false, full = true) {
    
     
@@ -339,7 +446,7 @@ module motor_arm_to_wing_attach(aero_grav_center){
 
     circle_radius = 4;
     attach_height = 2;
-    attach_y = 7;
+    attach_y = 6.3;
     attach_x = 2;
     x_pos = aero_grav_center[1] + motor_arm_grav_center_offset+15;
     z_pos = wing_root_mm +motor_arm_width+motor_arm_to_wing_hull;
