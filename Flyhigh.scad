@@ -38,11 +38,9 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO 
-// Clean motor arm function : OK
-// Winglet attach reduction : OK
-// Augmenter qualite global $fa = 5; $fs = 0.5; : Enlever le cylindre de l'aileron qui dépasse OK
-// Correction servo + Attach to wing servo
-// Agrandir piece central
+// Agrandir piece central : OK
+// Servo pin to wing
+// fuselage (continuer rear motor centrage ?
 // Clean too much param
 
 
@@ -81,11 +79,11 @@ Aileron_part = false;
 Root_part = false;
 Mid_part = false;
 Tip_part = false;
-Mid_Aileron_part = true;
-Motor_arm_full = true;
+Mid_Aileron_part = false;
+Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
-Center_part = false;
+Center_part = true;
 Center_part_locker = false; 
 
 //**************** Quality settings **********//
@@ -137,8 +135,17 @@ gravity_center_plot = false; //Green
 
 //**************** Fuselage and center part **********//
 center_width = 80; //55;
-center_length = 210;
+center_length = 252;
 center_height = 8;
+main_stage_x_offset = center_length/5;
+fuselage_x_offset = center_length/3;
+fuselage_z_offset = center_width/2;
+nozzle_length = 30;
+L_total = center_length - main_stage_x_offset+ fuselage_x_offset;//300;          // longueur du fuselage
+D_front = center_width*0.5;           // diamètre au nez
+D_max   = center_width*0.7;           // diamètre maximum au centre
+D_tail  = center_width*0.7;           // diamètre final
+num       = 80;            // nombre de sections (plus = plus lisse)
 //******//
 
 
@@ -723,4 +730,5 @@ else
     
 } //End if main
 
-//connection_mid_to_ailerons(connexion_void = false, ribs_void = true);
+CreateFuselage();
+
