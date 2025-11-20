@@ -192,7 +192,7 @@ module Servo9gVoid()
     }
 }
 
-
+// Use for display only
 module Servo4 () 
 {   
     all_pts = get_trailing_edge_points();
@@ -213,26 +213,69 @@ module Servo4 ()
         union(){
         cube([ servo_dimension_perso[0],servo_dimension_perso[1],servo_dimension_perso[2]]);
         
-        //Triangle to complete the void
-  /*
-        translate([ 0, servo_dimension_perso[1], servo_dimension_perso[2] ])
-            rotate([90, 0, 0])
-                linear_extrude(height = servo_dimension_perso[1])
-                    polygon([
-                    [0, 0],       // Point A
-                    [servo_dimension_perso[0], 0],      // Point B
-                    [servo_dimension_perso[0], servo_dimension_perso[0]*tan(sweep_ang)]      // Point C
-                    ]);   
-        */
         }
+        
+
+    //Add cylinder to represent the rotation axis
+    translate([servo_dimension_perso[0]*tan(sweep_ang)+1, servo_dimension_perso[1]/2, servo_dimension_perso[2]*cos(sweep_ang)])
+        rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep
+            translate([5,0,0])
+                cylinder(h=1,r=2); 
+                    
 }
 
+// Use for remove the servo space from motor arm
 module Servo4Void () 
 {
-    void_offset = 1; //1.1; To be validated
-    
     all_pts = get_trailing_edge_points();
- 
+    
+    pt_start = find_interpolated_point(aileron_start_z, all_pts);
+    pt_end   = find_interpolated_point(aileron_end_z, all_pts);
+    inner_pts = [for (pt = all_pts) if (pt[2] > aileron_start_z && pt[2] < aileron_end_z) pt];
+    full_pts = concat(
+        pt_start != undef ? [pt_start] : [],
+        inner_pts,
+        pt_end != undef ? [pt_end] : []
+    );
+    
+    // Get the sweep angle between extrem point of ailerons
+    sweep_ang = atan((full_pts[len(full_pts) - 1][0] - full_pts[0][0])/(full_pts[len(full_pts) - 1][2] -full_pts[0][2])); 
+    
+    rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep
+        cube([ servo_dimension_perso_void[0],servo_dimension_perso_void[1],servo_dimension_perso_void[2]]);
+    
+}
+
+module ServoHorn()
+{
+    scale_factor = 1.2;   
+    difference(){
+    
+        //Draw the connection to servo horn
+        servo_horn_connection();
+        
+        //Withdraw the wing to the horn to grab the wing
+        intersection(){
+            scale([1,scale_factor,1]) wing_shell();
+            cube_cut(wing_root_mm + motor_arm_width+motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull);
+        }
+    }        
+     
+}
+
+//void == true -> use for removing motor part which block the horn servo movement
+module servo_horn_connection (void = false) 
+{
+
+    horn_pos_x_offset = 10;
+    horn_pos_z_offset = 1.5;
+    horn_dim_z = 1; //Part connected to servo
+    horn_attach_dim_z = 10; //Part connected to wing
+    cmd_dim_x = 31.5;
+    cmd_dim_y = 9;
+
+    all_pts = get_trailing_edge_points();
+    
     pt_start = find_interpolated_point(aileron_start_z, all_pts);
     pt_end   = find_interpolated_point(aileron_end_z, all_pts);
     inner_pts = [for (pt = all_pts) if (pt[2] > aileron_start_z && pt[2] < aileron_end_z) pt];
@@ -245,9 +288,52 @@ module Servo4Void ()
     // Get the sweep angle between extrem point of ailerons
     sweep_ang = atan((full_pts[len(full_pts) - 1][0] - full_pts[0][0])/(full_pts[len(full_pts) - 1][2] -full_pts[0][2])); 
 
+    if(void) {
     
+
+        rotate([0, 0, servo_rotate_z_deg])
+            translate([servo_dist_le_mm + servo_dimension_perso[0]*cos(sweep_ang)+2-cmd_dim_x/3, servo_dist_depth_mm-cmd_dim_y, servo_dist_root_mm + servo_dimension_perso[2]*cos(sweep_ang)-horn_attach_dim_z])
+                cube([ 2*cmd_dim_x,4*cmd_dim_y,2*horn_attach_dim_z]);     
     
-    translate([-void_offset/2,-void_offset/2,-void_offset/2])
+    }
+    
+    else {
+    
+    difference(){ // We remove from the part two cylinder to fix with screws
+    union(){
+    
+    hull(){ //We hull 2 cube to get the horn
+        rotate([0, 0, servo_rotate_z_deg])
+            translate([servo_dist_le_mm + servo_dimension_perso[0]*tan(sweep_ang)+1, servo_dist_depth_mm, servo_dist_root_mm + servo_dimension_perso[2]*cos(sweep_ang)])
+                rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep
+                    translate([horn_pos_x_offset,0,horn_pos_z_offset])
+                        cube([ servo_dimension_perso[0]-horn_pos_x_offset,servo_dimension_perso[1],horn_dim_z]);
+    
+        rotate([0, 0, servo_rotate_z_deg])
+            translate([servo_dist_le_mm + servo_dimension_perso[0]*cos(sweep_ang)+2, servo_dist_depth_mm, servo_dist_root_mm + servo_dimension_perso[2]*cos(sweep_ang)-1])
+                cube([ cmd_dim_x,cmd_dim_y,0.1]);
+                     
+    }//End of hull
+
+        rotate([0, 0, servo_rotate_z_deg])
+            translate([servo_dist_le_mm + servo_dimension_perso[0]*cos(sweep_ang)+2, servo_dist_depth_mm, servo_dist_root_mm + servo_dimension_perso[2]*cos(sweep_ang)-1])
+                cube([ cmd_dim_x,cmd_dim_y,horn_attach_dim_z]); 
+    } // End of union
+    
+    rotate([0, 0, servo_rotate_z_deg])
+    translate([servo_dist_le_mm+servo_dimension_perso[0]*tan(sweep_ang)+1, servo_dist_depth_mm+servo_dimension_perso[1]/2, servo_dist_root_mm+servo_dimension_perso[2]*cos(sweep_ang)])
         rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep
-            cube([ servo_dimension_perso[0]*void_offset,servo_dimension_perso[1]*void_offset,servo_dimension_perso[2]*void_offset]);
+            {
+            translate([12.5,0,0])
+                cylinder(h=8,r=0.55);
+                
+            translate([17.5,0,0])
+                cylinder(h=8,r=0.55);                
+                
+            }
+            
+      }//End of difference
+    }//End of else
+     
+    
 }

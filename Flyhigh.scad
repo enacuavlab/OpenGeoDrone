@@ -38,8 +38,7 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO 
-// Agrandir piece central : OK
-// Servo pin to wing
+// Servo horn incorpo into Tree full or part + shell
 // fuselage (continuer rear motor centrage ?
 // Clean too much param
 
@@ -83,7 +82,7 @@ Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
-Center_part = true;
+Center_part = false;
 Center_part_locker = false; 
 
 //**************** Quality settings **********//
@@ -295,17 +294,23 @@ sweep_angle_3rd_spar = 2.04*sweep_angle/3;
 
 
 //**************** Servo settings **********//  
-servo_dimension_perso = [23,8,70];//[23,8,27.3]; 
+servo_dimension_perso_void = [23,8,70];
+servo_dimension_perso = [23,8,27.3]; 
 all_pts_servo = get_trailing_edge_points();
 pt_start_servo = find_interpolated_point(wing_root_mm, all_pts_servo);
 
-create_servo = true; // It is important to check that your servo placement doesnt create any artifacts(You can
-// comment out the CreateWing() function to assist)
+create_servo = true; // It is important to check that your servo placement doesnt create any artifacts
 servo_type = 4;           // 1=3.7g 2=5g 3=9g 4=perso
-servo_dist_root_mm = wing_root_mm-20; // servo placement from root
-servo_dist_le_mm = pt_start_servo[0]-37.5;    // servo placement from the leading edge
+
+servo_dist_root_mm = wing_root_mm + motor_arm_to_wing_hull+ motor_arm_width - servo_dimension_perso[2]+2.5; // servo placement from root
+servo_dist_le_mm = pt_start_servo[0]-40;    // servo placement from the leading edge
+servo_dist_depth_mm = -4; // offset the servo into or out of the wing till you dont see red
+
+servo_void_dist_root_mm = wing_root_mm-20; // servo void placement from root
+servo_void_dist_le_mm = pt_start_servo[0]-51;    // servo void placement from the leading edge
+servo_void_dist_depth_mm = -4; // offset the servo void into or out of the wing till you dont see red
+
 servo_rotate_z_deg = -0;  // degrees to rotate on z axis
-servo_dist_depth_mm = -0; // offset the servo into or out of the wing till you dont see red
 servo_show = false;       // for debugging only. Show the servo for easier placement
 //******//
 
@@ -549,7 +554,7 @@ module wing_spar_holes() {
 //Create Void in ribs for servo (same reason as spar)
 module servo_void_block() {
     rotate([0, 0, servo_rotate_z_deg])
-    translate([servo_dist_le_mm, servo_dist_depth_mm, servo_dist_root_mm])
+    translate([servo_void_dist_le_mm, servo_void_dist_depth_mm, servo_void_dist_root_mm])
     {
         if (servo_type == 1) Servo3_7gVoid();
         else if (servo_type == 2) Servo5gVoid();
@@ -605,8 +610,11 @@ module motor_arm_main(aero_grav_center) {
                  
             CreateMotorArm(aero_grav_center);                   
             wing_spar_holes(); //We remove the spar from the motor arms           
-            if (create_servo) servo_block(); //We remove the servo from the motor arms
-            
+            if (create_servo) {
+            servo_void_block(); //We remove the servo from the motor arms
+            servo_horn_connection(true);
+            }
+                        
          }//End of difference
      }//End if
 
@@ -723,12 +731,16 @@ else
 
     if (servo_show)
     {
-        servo_void_block();
+        //servo_void_block();
         servo_block();
     }
     
     
 } //End if main
 
-CreateFuselage();
+//CreateFuselage();
+ServoHorn();
+
+
+
 
