@@ -38,7 +38,7 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO 
-// Servo horn incorpo into Tree full or part + shell
+// Servo horn incorpo into Tree full or part + shell : OK
 // fuselage (continuer rear motor centrage ?
 // Clean too much param
 
@@ -68,10 +68,10 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 //****************Global Variables*****************//
 
 // Printing Mode : Choose which part of wings you want
-Full_system = false;
+Full_system = true;
 
-Left_side = true;
-Right_side = false;
+Left_side = false;
+Right_side = true;
 
 // Choose one at a time
 Aileron_part = false;
@@ -82,6 +82,7 @@ Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
+Servo_horn = true;
 Center_part = false;
 Center_part_locker = false; 
 
@@ -293,13 +294,12 @@ sweep_angle_3rd_spar = 2.04*sweep_angle/3;
 
 
 
-//**************** Servo settings **********//  
+//**************** Servo settings **********// 
+create_servo = true; // It is important to check that your servo placement doesnt create any artifacts 
 servo_dimension_perso_void = [23,8,70];
 servo_dimension_perso = [23,8,27.3]; 
 all_pts_servo = get_trailing_edge_points();
 pt_start_servo = find_interpolated_point(wing_root_mm, all_pts_servo);
-
-create_servo = true; // It is important to check that your servo placement doesnt create any artifacts
 servo_type = 4;           // 1=3.7g 2=5g 3=9g 4=perso
 
 servo_dist_root_mm = wing_root_mm + motor_arm_to_wing_hull+ motor_arm_width - servo_dimension_perso[2]+2.5; // servo placement from root
@@ -395,11 +395,12 @@ module wing_full_system(aero_grav_center) {
             }
             //We remove the tip for Winglet
             if (create_winglet) cube_cut(0,wing_root_mm + motor_arm_width + wing_mid_mm);
+            intersection_wing_full_system (); //We keep mid and root only
         }
         if (create_winglet) winglet_main();
+        
+        main_create_ailerons(); // Create aileron
 
-        // Create aileron
-        main_create_ailerons();
 
     }
 }
@@ -429,6 +430,7 @@ module wing_main(aero_grav_center) {
                 connection_mid_to_ailerons(connexion_void = true);
             }//End difference Mid_Aileron_part       
         }//End if Mid_Aileron_part
+        
         
     }
     else  wing_full_system(aero_grav_center);
@@ -575,7 +577,11 @@ module servo_block() {
     }
 }
 
+//Create servo horn
+module servo_horn_main() {
 
+    ServoHorn();
+}
 
 //-----------------------------------------------------------
 // SECTION CUTS (for printing)
@@ -593,7 +599,14 @@ module cube_cut(start_z, len_z) {
         cube([2000, 2000, len_z]);
 }
 
+//We use this intersection for display only on full system mode to get mid and root
+module intersection_wing_full_system () {
 
+    union(){
+        cube_cut(0, wing_root_mm - motor_arm_to_wing_hull);
+        cube_cut(wing_root_mm + motor_arm_width+motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull);
+    }            
+}
 
 
 
@@ -709,6 +722,14 @@ else
     //**************** Center part **********//
     center_part_main(aero_grav_center, center_width, center_length, center_height, Center_part_locker);
     
+    //**************** Servo horn **********//    
+    if((Left_side && Servo_horn) || Full_system) servo_horn_main();
+    
+    if((Right_side && Servo_horn) || Full_system)
+        mirror([0, 0, 1]) 
+            translate([0, 0, center_width])
+                servo_horn_main()
+        
     //**************** Debug **********//
     if(debug_leading_trailing_edge)
     {
@@ -739,7 +760,7 @@ else
 } //End if main
 
 //CreateFuselage();
-ServoHorn();
+
 
 
 
