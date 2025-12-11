@@ -50,7 +50,7 @@ module CreateWinglet() {
     
 }
 
-
+/*
 //Module to draw the attach between winglet and wing
 module winglet_to_wing_attach(){
 
@@ -66,10 +66,13 @@ module winglet_to_wing_attach(){
     x_pos = pt_te_top[0]-x_offset;
     
 
-        translate([x_pos,y_offset,z_pos]) 
+        translate([x_pos,y_offset,z_pos]) {
+            
             rotate([-90,0,0]){
-            translate([-attach_x/2,0,0]) cube([attach_x,attach_y,attach_height]);
+            rotate([0,-90,0]) translate([-attach_x/2,0,0]) linear_extrude(height=attach_x) polygon(points=[[0,0], [0,attach_y], [attach_height,attach_y]]);
+            //translate([-attach_x/2,0,0]) cube([attach_x,attach_y,attach_height]);
             translate([0,attach_y,0]) linear_extrude(height=attach_height) circle(r=circle_radius);
+            }
             }
 
 }
@@ -98,6 +101,61 @@ module winglet_to_wing_attach_void(){
             }
 
 }
+*/
+
+//Module to draw the attach between winglet and wing
+module winglet_to_wing_attach(){
+
+    attach_height = 5;
+    attach_y = 3;
+    attach_x = 1.2;
+    crochet_scale = 1.5;
+    z_pos = wing_root_mm + wing_mid_mm + motor_arm_width - winglet_to_wing_hull;
+    y_offset = -3.4;//-2.8;
+    x_offset = 2.9*aileron_thickness; // Offset from TE
+    all_pts_te = get_trailing_edge_points();
+    pt_te_top = find_interpolated_point(z_pos, all_pts_te);
+    x_pos = pt_te_top[0]-x_offset;
+    
+
+        translate([x_pos,y_offset,z_pos]) {
+            
+            rotate([90,0,90]){
+                translate([0,-2*attach_y+1,0]) linear_extrude(height=attach_height) polygon(points=[[0,0], [0,attach_y], [crochet_scale*attach_x,attach_y]]);
+                translate([0,-attach_y+1,0]) cube([attach_x,attach_y,attach_height]);
+            }
+        }
+
+} 
+
+//Module to void the attach between winglet and wing
+module winglet_to_wing_attach_void(){
+
+    scale_up = 1.1;// We use this parameter to get space for the parts to imbricate
+    height = 5;
+    attach_height = height*scale_up;
+    attach_y = 3;
+    attach_x = 1.2*scale_up;
+    crochet_scale = 1.5;
+    z_pos = wing_root_mm + wing_mid_mm + motor_arm_width - winglet_to_wing_hull;
+    y_offset = -3.4;//-2.8;
+    x_offset = 2.9*aileron_thickness; // Offset from TE
+    all_pts_te = get_trailing_edge_points();
+    pt_te_top = find_interpolated_point(z_pos, all_pts_te);    
+    x_pos = pt_te_top[0]-x_offset;    
+
+    
+        //(attach_height - height)/2 => correction on x axis of the scale to stay at the same place
+        translate([x_pos-(attach_height - height)/2,y_offset,z_pos]) {
+            
+            rotate([90,0,90]){
+                translate([0,-2*attach_y+1,0]) linear_extrude(height=attach_height) polygon(points=[[0,0], [0,attach_y], [crochet_scale*attach_x,attach_y]]);
+                translate([0,-attach_y+1,0]) cube([attach_x,attach_y,attach_height]);
+                translate([-2*attach_x,-2*attach_y+1,0]) cube([2*attach_x,2*attach_y,attach_height]);
+            }
+        }
+
+}
 
 
 ///*** Function for connection between winglet to wing ***///
@@ -120,7 +178,7 @@ module Create_winglet_connection(cube_for_vase = false)
         rotate([180,sweep_angle,0])
             color("green") 
             if(cube_for_vase){ // In vase mode, we create the hole in the mid part, we therefore offset the hole to avoid too tight junction 
-                cylinder(h = attached_1_length, r = attached_1_radius*winglet_attach_dilatation_offset_PLA, center = false);
+                cylinder(h = attached_1_length/scale_factor, r = attached_1_radius*winglet_attach_dilatation_offset_PLA, center = false);
             }
             else {
                  cylinder(h = attached_1_length*scale_factor, r = attached_1_radius, center = false);
@@ -139,7 +197,7 @@ module Create_winglet_connection(cube_for_vase = false)
         rotate([180,sweep_angle,0])
             color("green") 
             if(cube_for_vase){   // In vase mode, we create the hole in the mid part, we therefore offset the hole to avoid too tight junction         
-                cylinder(h = attached_2_length, r = attached_2_radius*winglet_attach_dilatation_offset_PLA, center = false);
+                cylinder(h = attached_2_length/scale_factor, r = attached_2_radius*winglet_attach_dilatation_offset_PLA, center = false);
             }
             else {
                  cylinder(h = attached_2_length*scale_factor, r = attached_2_radius, center = false);

@@ -113,8 +113,8 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
     screw_hole_motor_arm_offset = 3.7;
     screw_hole_1 = 3;
     screw_hole_2 = 1.5;
-    motor_footprint_long = 9.5;
-    motor_footprint_short = 8;
+    motor_footprint_long = 8;//9.5; Parameters to change motor screw holes position
+    motor_footprint_short = 8; //Parameters to change motor screw holes position
     dummy_motor_base_radius = 9.5;
     dummy_motor_base_height = 20;
     motor_support_scale = 1.8;
@@ -441,6 +441,7 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
 
 }
 
+/*
 //Module to draw the attach between motor arm and wing
 module motor_arm_to_wing_attach(aero_grav_center){
 
@@ -480,5 +481,54 @@ module motor_arm_to_wing_attach_void(aero_grav_center){
             translate([-attach_x/2,0,0]) cube([attach_x,attach_y,attach_height]);
             translate([0,attach_y,0]) linear_extrude(height=attach_height) circle(r=circle_radius);
             }
+
+}
+*/
+
+//Module to draw the attach between motor arm and wing
+module motor_arm_to_wing_attach(aero_grav_center){
+
+    attach_height = 5;
+    attach_y = 3;
+    attach_x = 1.2;
+    crochet_scale = 1.5;
+    x_pos = aero_grav_center[1] + motor_arm_grav_center_offset+15;
+    z_pos = wing_root_mm +motor_arm_width+motor_arm_to_wing_hull;
+    y_offset = -5;//-2.8;
+    
+
+        translate([x_pos,y_offset,z_pos]) {
+            
+            rotate([-90,0,90]){
+                translate([0,-2*attach_y+1,0]) linear_extrude(height=attach_height) polygon(points=[[0,0], [0,attach_y], [crochet_scale*attach_x,attach_y]]);
+                translate([0,-attach_y+1,0]) cube([attach_x,attach_y,attach_height]);
+            }
+        }
+
+} 
+
+//Module to void the attach between motor arm and wing
+module motor_arm_to_wing_attach_void(aero_grav_center){
+
+    scale_up = 1.1;// We use this parameter to get space for the parts to imbricate
+    height = 5;
+    attach_height = height*scale_up;
+    attach_y = 3;
+    attach_x = 1.2*scale_up;
+    crochet_scale = 1.5;
+    x_pos = aero_grav_center[1] + motor_arm_grav_center_offset+15;
+    z_pos = wing_root_mm +motor_arm_width+motor_arm_to_wing_hull;
+    y_offset = -5;//-2.8;
+
+    
+        //(attach_height - height)/2 => correction on x axis of the scale to stay at the same place
+        translate([x_pos+(attach_height - height)/2,y_offset,z_pos]) {
+            
+            rotate([-90,0,90]){
+                translate([0,-2*attach_y+1,0]) linear_extrude(height=attach_height) polygon(points=[[0,0], [0,attach_y], [crochet_scale*attach_x,attach_y]]);
+                translate([0,-attach_y+1,0]) cube([attach_x,attach_y,attach_height]);
+                translate([-2*attach_x,-2*attach_y+1,0]) cube([2*attach_x,2*attach_y,attach_height]);
+            }
+        }
 
 }

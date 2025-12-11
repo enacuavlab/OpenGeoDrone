@@ -38,7 +38,8 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO 
-// Servo horn incorpo into Tree full or part + shell : OK
+// Trou 2mm dans pilote cervo
+// Servo always present when choose part
 // fuselage (continuer rear motor centrage ?
 // Clean too much param
 
@@ -49,7 +50,10 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // Validation print :
-// - motor arm wing attach
+// - Wing spar_circle_holder
+// Change spar_circle_holder for motor arm
+// winglet scale factor
+// Test ailerons command 
 
 
 //Later :
@@ -68,10 +72,10 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 //****************Global Variables*****************//
 
 // Printing Mode : Choose which part of wings you want
-Full_system = true;
+Full_system = false;
 
-Left_side = false;
-Right_side = true;
+Left_side = true;
+Right_side = false;
 
 // Choose one at a time
 Aileron_part = false;
@@ -82,8 +86,8 @@ Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
-Servo_horn = true;
-Center_part = false;
+Servo_horn = false;
+Center_part = true;
 Center_part_locker = false; 
 
 //**************** Quality settings **********//
@@ -135,9 +139,9 @@ gravity_center_plot = false; //Green
 
 //**************** Fuselage and center part **********//
 center_width = 80; //55;
-center_length = 252;
+center_length = 275;
 center_height = 8;
-main_stage_x_offset = center_length/5;
+main_stage_x_offset = center_length/12;
 fuselage_x_offset = center_length/3;
 fuselage_z_offset = center_width/2;
 nozzle_length = 30;
@@ -258,7 +262,7 @@ spar_length_offset_1 = wing_mm - wing_tip_mm - 2*attached_1_length;
 spar_length_offset_2 = wing_mm - wing_tip_mm - 2*attached_2_length;
 spar_angle_fitting_coeff = 1.15; // Coeff to adjust the spar angle into the wing
 spar_circles_nb = 12; //Number of outer circle around spar to maintain the part
-spar_circle_holder = 0.27; //radius of outer circle around spar to maintain the part 0.25 too large and 0.30 too tight
+spar_circle_holder = 0.25; //radius of outer circle around spar to maintain the part 0.25 too large and 0.30 too tight => 0.26 too tight
 spar_inser_lgth_into_center_part = center_width/2;
 
 //*** Spar angle rotation to follow the sweep
@@ -698,6 +702,8 @@ else
     echo(str("[SPAR] Spar 2 at ",spar_hole_perc_2,"% from LE is ", spar_hole_length_2 + spar_inser_lgth_into_center_part, "mm length."));    
     echo(str("[SPAR] Spar 3 at ",spar_hole_perc_3,"% from LE is ", spar_hole_length_3 + spar_inser_lgth_into_center_part, "mm length."));        
    
+   //motor_arm_to_wing_attach(aero_grav_center);
+   //motor_arm_to_wing_attach_void(aero_grav_center);
     //**************** Wing **********//
     if(Full_system || Root_part || Mid_part || Tip_part || Aileron_part || Mid_Aileron_part){
              
@@ -760,8 +766,4 @@ else
 } //End if main
 
 //CreateFuselage();
-
-
-
-
-
+ 

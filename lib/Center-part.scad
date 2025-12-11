@@ -106,8 +106,11 @@ gravity_line_height = 0.2;
 battery_width = 70;
 battery_hole_width = 8;
 battery_hole_length = 25;
-battery_x_pos_1 = 100;
-battery_x_pos_2 = 160;
+battery_x_pos_1 = 35;
+battery_x_pos_2 = 100;
+battery_x_pos_3 = 85;
+battery_x_pos_4 = 160;
+
 
 rear_motor_int_circle_r = 4.75;
 rear_motor_int_circ_attach_r = 1.5;
@@ -136,7 +139,7 @@ mid_x_length = 9*(tawaki_esc_space-tawaki_pin_space_length-2*tawaki_ext_pin_rad)
 mid_x_offset = tawaki_pin_space_length + mid_x_length/2 + 2*tawaki_ext_pin_rad;
 //mid_x_offset = tawaki_esc_space  - mid_x_length/2;
 mid_x_width = ct_width - 15;
-rear_x_length = rear_motor_square_support_attach_length;
+rear_x_length = 2.5*rear_motor_square_support_attach_length;
 rear_x_offset = tawaki_pin_space_length+2*tawaki_ext_pin_rad+ rear_x_length/2 + tawaki_esc_space + esc_ext_pin_rad;
 rear_x_width = ct_width - 15;
 
@@ -357,8 +360,24 @@ module void_battery_holder(){
 
         translate([battery_x_pos_2,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
             color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);      
-      
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);     
+                   
+        translate([battery_x_pos_3,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_3,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);                       
+
+        translate([battery_x_pos_4,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_4,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);  
+                    
      }// End of union 2
 
 }
