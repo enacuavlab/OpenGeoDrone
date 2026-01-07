@@ -93,3 +93,95 @@ module CreateSparHole_center(sweep_ang, hole_offset, hole_perc, hole_size, hole_
                         } //End of difference                    
 
 }
+
+
+//Create hole in root part for cable passage
+module root_cables_hole(cable_hole_width, cable_hole_perc, cable_hole_ellipse, cable_hole_offset, slice_gap, sweep_ang, cable_passage_arm_perc, cable_passage_main_perc, wingmm, wing_rootmm, motorarm_to_winghull, wing_root_chordmm) {
+
+    offset_bottom_z = -30;
+    root_cables_hole_flip_side = true;
+    //Here we rotate of 180 deg if requested to flip to other side
+    flip_side = root_cables_hole_flip_side ? 180 : 0;
+    
+    intersection() {
+    
+    union() {
+        color("orange") translate([ cable_hole_perc / 100 * wing_root_chordmm, cable_hole_offset, offset_bottom_z ])
+            rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep    
+                linear_extrude(height = wingmm)    
+                    scale([1, cable_hole_ellipse/cable_hole_width])
+                        circle(r = cable_hole_width, $fn = 100);
+                                                
+        color("blue")
+            translate([ cable_hole_perc / 100 * wing_root_chordmm, cable_hole_width / 2 - (slice_gap/2), offset_bottom_z ]) 
+                rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep 
+                    rotate([ 0, 0, flip_side ]) //rotation to flip from on side to the other with 
+                        cube([ slice_gap, 50, wingmm ]);
+           
+         //Hole for cable passage from wing to motor arm
+        color("orange") translate([ cable_passage_arm_perc/ 100 * wing_root_chordmm, cable_hole_offset, wing_rootmm - motorarm_to_winghull ])
+            rotate([ 90, 0, 0 ]) //Spar angle rotation to follow the sweep    
+                linear_extrude(height = wingmm)    
+                    scale([1, cable_hole_ellipse/cable_hole_width])
+                        circle(r = cable_hole_width, $fn = 100);        
+
+         //Hole for cable passage from wing to main stage
+        color("orange") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, cable_hole_offset, 0 ])
+            rotate([ 90, 0, 0 ]) //Spar angle rotation to follow the sweep    
+                linear_extrude(height = wingmm)    
+                    scale([1, cable_hole_ellipse/cable_hole_width])
+                        circle(r = cable_hole_width, $fn = 100);                          
+      }
+        translate([-1000, -1000, 0])
+            cube([2000, 2000, wing_rootmm - motorarm_to_winghull]);
+    }
+    
+    
+   
+    
+}
+
+//Create hole in root part for cable passage
+module root_cables_void(cable_hole_width, cable_hole_perc, cable_hole_ellipse, cable_hole_offset, cable_passage_arm_perc, cable_passage_main_perc, wingmm, wing_rootmm, motorarm_to_winghull, wing_root_chordmm) {
+
+    void_offset = 1.15;
+    void_width = 100;
+    hole_void_clearance = 2;
+    root_cables_hole_flip_side = true;
+    //Here we rotate of 180 deg if requested to flip to other side
+    flip_side = root_cables_hole_flip_side ? 180 : 0;
+    void_cube_width = cable_hole_width/2;
+    offset_bottom_z = -30;
+
+    intersection() {
+    
+        union() {
+            color("brown") translate([ cable_hole_perc / 100 * wing_root_chordmm +void_cube_width/2, cable_hole_offset, offset_bottom_z ])
+                    rotate([ 0, sweep_angle, 0 ]) //Spar angle rotation to follow the sweep
+                        rotate([ 0, 0, flip_side ]) //rotation to flip from on side to the other with
+                            cube([ void_cube_width, void_width, wingmm ]);
+                                               
+            color("blue") translate([ cable_hole_perc / 100 * wing_root_chordmm, cable_hole_offset, -30 ])
+                rotate([ 0, sweep_angle, 0 ]) //Spar angle rotation to follow the sweep    
+                    linear_extrude(height = wingmm)    
+                        scale([1, cable_hole_ellipse/cable_hole_width])
+                            circle(r = cable_hole_width * void_offset, $fn = 100);
+                          
+         //Hole for cable passage from wing to motor arm
+        color("orange") translate([ cable_passage_arm_perc/ 100 * wing_root_chordmm, cable_hole_offset, wing_rootmm - motorarm_to_winghull ])
+            rotate([ 90, 0, 0 ]) //Spar angle rotation to follow the sweep    
+                linear_extrude(height = wingmm)    
+                    scale([1, cable_hole_ellipse/cable_hole_width])
+                        circle(r = cable_hole_width * void_offset, $fn = 100);   
+ 
+         //Hole for cable passage from wing to main stage
+        color("orange") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, cable_hole_offset,0 ])
+            rotate([ 90, 0, 0 ]) //Spar angle rotation to follow the sweep    
+                linear_extrude(height = wingmm)    
+                    scale([1, cable_hole_ellipse/cable_hole_width])
+                        circle(r = cable_hole_width * void_offset, $fn = 100);  
+         }
+        
+        cube_cut(0, wing_rootmm - motorarm_to_winghull);
+    }
+}

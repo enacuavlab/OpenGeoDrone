@@ -39,13 +39,12 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 // TODO 
 // Trou 2mm dans pilote cervo
+// Attach Tawaki + solide
 // Servo always present when choose part
 // fuselage (continuer rear motor centrage ?
 // Clean too much param
-
-
-// Correction passage cable
-// Correction serrage spar main center more tight
+// Correction serrage spar main center more tight ?
+// Lock arm less tight
 
 
 
@@ -79,7 +78,7 @@ Right_side = false;
 
 // Choose one at a time
 Aileron_part = false;
-Root_part = false;
+Root_part = true;
 Mid_part = false;
 Tip_part = false;
 Mid_Aileron_part = false;
@@ -87,16 +86,16 @@ Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
-Center_part = true;
+Center_part = false;
 Center_part_locker = false; 
 
 //**************** Quality settings **********//
-$fa = 2; //5; //Maximum angle between two segments. → Smaller = more segments = smoother.
-$fs = 0.2;//1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
-
+draft_quality = false;
+$fa = draft_quality?2:5; //Maximum angle between two segments. → Smaller = more segments = smoother.
+$fs = draft_quality?0.1:1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
+wing_sections = draft_quality?6:50; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
 
 //****************Wing Airfoil settings**********//
-wing_sections = Full_system?6:20; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
 wing_mm = 500;            // wing length in mm (= Half the wingspan)
 wing_root_chord_mm = 180; // Root chord length in mm
 wing_tip_chord_mm = 110; // wing tip chord length in mm (Not relevant for elliptic wing);
@@ -296,6 +295,17 @@ sweep_angle_3rd_spar = 2.04*sweep_angle/3;
 //******//
 
 
+//**************** Cable Root Hole settings **********//
+debug_cable_root_hole = false;
+debug_cable_root_void = false;
+root_cab_hole = true;
+root_cable_hole_width = 6;
+root_cable_hole_perc = 15.5;
+root_cable_hole_ellipse = 4;
+root_cable_hole_offset = 3;
+root_cable_passage_arm_perc = 100; //Hole position for cable passage from wing to motor arm in percentage of wing chord
+root_cable_passage_main_perc = 26; //Hole position for cable passage from wing to main stage in percentage of wing chord
+//******//
 
 
 //**************** Servo settings **********// 
@@ -480,6 +490,7 @@ module wing_voids() {
         if (spar_hole) wing_spar_voids();
         if (create_aileron) Ailerons_pin_void();
         if (create_winglet) Create_winglet_connection_void();
+        if (root_cab_hole) root_cables_void_main(); 
         //if (create_servo) servo_void_block();
     }
 }
@@ -506,6 +517,10 @@ module wing_modif(aero_grav_center) {
             winglet_to_wing_attach_void(); 
             winglet_main(); //remove the overlapping part of wing on winglet
         }
+        
+        if (root_cab_hole) {
+            root_cables_hole_main(); 
+        }
     }
 }
 
@@ -528,7 +543,7 @@ module main_create_ailerons() {
 }
 
 //-----------------------------------------------------------
-// SUBMODULES: Spars, Servos, Winglets
+// SUBMODULES: Spars, Servos, Winglets, Cable holes
 //-----------------------------------------------------------
 //Create Void into ribs for spars to avoid conflict between spar and ribs for vase print
 module wing_spar_voids() {
@@ -586,6 +601,18 @@ module servo_horn_main() {
 
     ServoHorn();
 }
+//Create hole in root part for cable passage
+module root_cables_hole_main() {
+
+    root_cables_hole(root_cable_hole_width, root_cable_hole_perc, root_cable_hole_ellipse, root_cable_hole_offset, slice_gap_width, sweep_angle, root_cable_passage_arm_perc, root_cable_passage_main_perc, wing_mm, wing_root_mm, motor_arm_to_wing_hull, wing_root_chord_mm);
+}
+
+//Create hole in root part for cable passage
+module root_cables_void_main() {
+
+    root_cables_void(root_cable_hole_width, root_cable_hole_perc, root_cable_hole_ellipse, root_cable_hole_offset, root_cable_passage_arm_perc, root_cable_passage_main_perc, wing_mm, wing_root_mm, motor_arm_to_wing_hull, wing_root_chord_mm);
+}
+
 
 //-----------------------------------------------------------
 // SECTION CUTS (for printing)
@@ -754,6 +781,10 @@ else
     }    
 
     if(debug_spar_void) wing_spar_voids(); //Show voids for wing spar in ribs structure
+    
+    if(debug_cable_root_void) root_cables_void_main();  //Show voids for cable root hole
+    
+    if(debug_cable_root_hole) root_cables_hole_main();  //Show cable root hole
 
 
     if (servo_show)
@@ -766,4 +797,4 @@ else
 } //End if main
 
 //CreateFuselage();
- 
+//root_cables_hole_main();
