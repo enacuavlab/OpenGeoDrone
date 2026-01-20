@@ -270,9 +270,11 @@ module servo_horn_connection (void = false)
     horn_pos_x_offset = 10;
     horn_pos_z_offset = 1.5;
     horn_dim_z = 1; //Part connected to servo
-    horn_attach_dim_z = 10; //Part connected to wing
+    horn_attach_dim_z = 16; //Part connected to wing
     cmd_dim_x = 31.5;
     cmd_dim_y = 9;
+    screw_face_length_offset = 4; //Offset to reduce the length x on the screw face
+    screw_diameter = 1;
 
     all_pts = get_trailing_edge_points();
     
@@ -303,11 +305,13 @@ module servo_horn_connection (void = false)
     union(){
     
     hull(){ //We hull 2 cube to get the horn
+    
+    //Part on which there is the screws
         rotate([0, 0, servo_rotate_z_deg])
             translate([servo_dist_le_mm + servo_dimension_perso[0]*tan(sweep_ang)+1, servo_dist_depth_mm, servo_dist_root_mm + servo_dimension_perso[2]*cos(sweep_ang)])
                 rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep
                     translate([horn_pos_x_offset,0,horn_pos_z_offset])
-                        cube([ servo_dimension_perso[0]-horn_pos_x_offset,servo_dimension_perso[1],horn_dim_z]);
+                        cube([ servo_dimension_perso[0]-horn_pos_x_offset -screw_face_length_offset,servo_dimension_perso[1],horn_dim_z]);
     
         rotate([0, 0, servo_rotate_z_deg])
             translate([servo_dist_le_mm + servo_dimension_perso[0]*cos(sweep_ang)+2, servo_dist_depth_mm, servo_dist_root_mm + servo_dimension_perso[2]*cos(sweep_ang)-1])
@@ -325,10 +329,10 @@ module servo_horn_connection (void = false)
         rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep
             {
             translate([12.5,0,0])
-                cylinder(h=8,r=0.55);
+                cylinder(h=8,r=screw_diameter);
                 
             translate([17.5,0,0])
-                cylinder(h=8,r=0.55);                
+                cylinder(h=8,r=screw_diameter);                
                 
             }
             

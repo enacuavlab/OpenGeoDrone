@@ -38,9 +38,8 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO 
-// Trou 2mm dans pilote cervo
+// Trou aile tete servo
 // Attach Tawaki + solide
-// Servo always present when choose part
 // fuselage (continuer rear motor centrage ?
 // Clean too much param
 // Correction serrage spar main center more tight ?
@@ -53,6 +52,7 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 // Change spar_circle_holder for motor arm
 // winglet scale factor
 // Test ailerons command 
+// Servo always present when choose part
 
 
 //Later :
@@ -78,14 +78,14 @@ Right_side = false;
 
 // Choose one at a time
 Aileron_part = false;
-Root_part = true;
+Root_part = false;
 Mid_part = false;
 Tip_part = false;
 Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
-Servo_horn = false;
+Servo_horn = true;
 Center_part = false;
 Center_part_locker = false; 
 
