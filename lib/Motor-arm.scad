@@ -1,5 +1,8 @@
 module CreateMotorArm(aero_grav_center){
 
+    gravity_line_width = 2;
+    gravity_line_height = 1;
+
     all_pts_le = get_leading_edge_points();
     all_pts_te = get_trailing_edge_points();
 
@@ -17,7 +20,14 @@ module CreateMotorArm(aero_grav_center){
 
 
 motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
-    
+
+    //**************** Gravity Line Creation **********//
+    translate([aero_grav_center[1],-ellipse_maj_ax + gravity_line_height,wing_root_mm- ellipse_maj_ax])  
+        color("red")
+            cube([gravity_line_width,gravity_line_height, 4*ellipse_maj_ax]);
+            
+    //**************** Motor Arm **********//
+                
         difference() {
         
             hull(){//left side motor arm hull
@@ -125,6 +135,7 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
     x_pos_screw_short = cos(45) * (motor_footprint_short );
     y_pos_screw_short = sin(45) * (motor_footprint_short );
     motor_x_pos = aero_grav_center[1] + grav_center_offset;
+
     
     
     //Echo lock parameters
@@ -143,7 +154,8 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
     
     //**************** End Parameters **********//
     
-    
+
+            
     difference() // Difference front / back / full
     { 
     union(){ //Union for whole arm

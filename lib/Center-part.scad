@@ -78,7 +78,7 @@ module bubble_bezier_fit_elliptic(length, rx, ry) {
 // CENTER PART
 // ------------------------
 
-module center_part(aero_grav_center, ct_width, ct_length, ct_height, rear_spar_locker = false){    
+module center_part(aero_grav_center, ct_width, ct_length, ct_height){    
 
 
  
@@ -86,14 +86,14 @@ size = [ct_length, ct_width];    // Square size (X, Y)
 radius = 3;         // Radius of rounded corners
 tawaki_int_pin_rad = 1.25;
 tawaki_ext_pin_rad = 2.9;
+tawaki_ext_pin_filet_rad = 1;
 tawaki_pin_height = 10;
 tawaki_pin_space_length = 30.2;
 tawaki_pin_space_width = 30.2;
 
-tawaki_esc_space = 90 + tawaki_pin_space_length;
-
 esc_int_pin_rad = 1.25;
 esc_ext_pin_rad = 3.15;
+esc_ext_pin_filet_rad = 1;
 esc_pin_height = 5;
 esc_pin_space_length = 32;
 esc_pin_space_width = 30.7;
@@ -108,8 +108,11 @@ battery_hole_width = 8;
 battery_hole_length = 25;
 battery_x_pos_1 = 35;
 battery_x_pos_2 = 100;
-battery_x_pos_3 = 85;
-battery_x_pos_4 = 160;
+battery_x_pos_3 = 75;
+battery_x_pos_4 = 145;
+battery_x_pos_5 = 165;
+battery_x_pos_6 = -5;
+battery_x_pos_7 = -25;
 
 
 rear_motor_int_circle_r = 4.75;
@@ -117,6 +120,8 @@ rear_motor_int_circ_attach_r = 1.5;
 rear_motor_int_circ_attach_dist_to_ct = 8 + rear_motor_int_circ_attach_r;
 rear_motor_square_support_attach_length = 32;
 rear_motor_square_support_attach_width = 4;
+
+tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad - rear_motor_square_support_attach_length - 15; //200 + tawaki_pin_space_length;
 
 main_part_rear_spar_screw_radius = 1.13;
 
@@ -130,29 +135,27 @@ slot_width    = 5;
 slot_spacing  = 10;     
 grid_angle    = 45;  
 
-front_x_length = tawaki_pin_space_length - front_offset ;
-front_x_offset = front_offset+ front_x_length/2;// + tawaki_pin_space_length/2;  
+front_x_length = tawaki_pin_space_length - front_offset -2.5;
+front_x_offset = front_offset+ front_x_length/2 +1;// + tawaki_pin_space_length/2;  
 front_x_width = ct_width - 15; //tawaki_pin_space_width - 2*tawaki_ext_pin_rad; 
-very_front_x_length = main_stage_x_offset - front_offset;
+very_front_x_length = main_stage_x_offset - front_offset-1.5;
 very_front_x_offset = front_offset+ very_front_x_length/2 - main_stage_x_offset; 
-mid_x_length = 9*(tawaki_esc_space-tawaki_pin_space_length-2*tawaki_ext_pin_rad)/10;
-mid_x_offset = tawaki_pin_space_length + mid_x_length/2 + 2*tawaki_ext_pin_rad;
+mid_x_length = tawaki_esc_space-tawaki_pin_space_length-2*tawaki_ext_pin_rad - 3;
+mid_x_offset = tawaki_pin_space_length + mid_x_length/2 + 2*tawaki_ext_pin_rad+2;
 //mid_x_offset = tawaki_esc_space  - mid_x_length/2;
 mid_x_width = ct_width - 15;
+mid_rear_x_length = esc_pin_space_length - 3*esc_ext_pin_rad;
+mid_rear_x_offset = ct_length - main_stage_x_offset - esc_pin_space_length - rear_motor_square_support_attach_length - 3;
+mid_rear_x_width = ct_width - 15;
 rear_x_length = 2.5*rear_motor_square_support_attach_length;
 rear_x_offset = tawaki_pin_space_length+2*tawaki_ext_pin_rad+ rear_x_length/2 + tawaki_esc_space + esc_ext_pin_rad;
 rear_x_width = ct_width - 15;
 
 
-
-    if(rear_spar_locker == false) {
-    
+        translate([0,center_part_y_offset,0]) {
         //**** Rear Motor Attach ****//
         rear_motor_attach();
 
-        difference(){ //Difference for rear spar removal
-        union() {
-        
         difference(){ //Difference for battery holder   
         
         difference(){ //Difference for the grid   
@@ -169,86 +172,11 @@ rear_x_width = ct_width - 15;
         
         //*** ESC ***//
         esc_pin_support();
-        }
-        //*** Rear Spar removal ***//    
-        rear_spar_main_stage_removal(rear_spar_locker);
-        
 
-        } //End of Difference for rear spar removal
-        
-    } // End if
+        } // End of translate
 
-    else if (rear_spar_locker){
-
-        intersection(){ //Difference for rear spar removal
-        difference(){ //Difference for rear spar removal
-        union() {
-        
-        difference(){ //Difference for battery holder   
-         
-        main_stage_and_gravity_line();
-            
-        void_battery_holder();
-        }// End of Difference for battery holder 
-
-        
-        //*** ESC ***//
-        esc_pin_support();
-        }
-        
-        //*** Rear Spar removal ***//
-        rear_spar_main_stage_removal(rear_spar_locker); 
-        } //End of Difference for rear spar removal  
-        
-        //*** Rear Spar locker ***//
-        rear_spar_locker_module(); 
-
-        } //End of intersection for rear spar removal
-    
     
 
-    } // End else if
-    
-   
-   
-   
-   
-   
- 
-module rear_spar_locker_module(){
-
-        translate([tawaki_esc_space, 3*ct_height+main_stage_y_width-ct_height/2,-ct_width])
-            rotate([90,0,0])
-                cube([esc_pin_space_length, ct_width,3*ct_height]);
-
-} 
-  
-module rear_spar_main_stage_removal(rear_spar_locker_mode){
-
-
-    if(rear_spar_locker_mode ==false) {
-        translate([tawaki_esc_space, 3*ct_height+main_stage_y_width-ct_height/2,-ct_width])
-            rotate([90,0,0])
-                cube([esc_pin_space_length, ct_width,3*ct_height]);
-     }
-
-
-        translate([tawaki_esc_space+1.5*esc_ext_pin_rad, 0,-ct_width/2+esc_pin_space_width/2 + 4*esc_ext_pin_rad])
-            rotate([90,0,0])
-                cylinder(h = 6*ct_height, r = main_part_rear_spar_screw_radius, center = true);
-                            
-        translate([tawaki_esc_space+1.5*esc_ext_pin_rad, 0,-ct_width/2-esc_pin_space_width/2 - 4*esc_ext_pin_rad])
-            rotate([90,0,0])
-                cylinder(h = 6*ct_height, r = main_part_rear_spar_screw_radius, center = true);
-
-        translate([tawaki_esc_space + esc_pin_space_width-esc_ext_pin_rad , 0,-ct_width/2+esc_pin_space_width/2 + 2*esc_ext_pin_rad])
-            rotate([90,0,0])
-                cylinder(h = 6*ct_height, r = main_part_rear_spar_screw_radius, center = true);   
-   
-        translate([tawaki_esc_space + esc_pin_space_width-esc_ext_pin_rad, 0,-ct_width/2-esc_pin_space_width/2 - 2*esc_ext_pin_rad])
-            rotate([90,0,0])
-                cylinder(h = 6*ct_height, r = main_part_rear_spar_screw_radius, center = true);   
-}   
  
    
   
@@ -304,7 +232,7 @@ module grid_center_part(){
             slot_grid();
         }
               
-    //Mid part under Tawaki
+    //Mid part 
     render(convexity=5) // Use for simplification for calculation
     translate([mid_x_offset,0,-center_width/2])
     rotate([90, 0, 0])
@@ -315,6 +243,18 @@ module grid_center_part(){
             // Slot grid
             slot_grid();
         }
+        
+     //Rear Mid part below ESC  
+    render(convexity=5) // Use for simplification for calculation
+    translate([mid_rear_x_offset,0,-center_width/2])
+    rotate([90, 0, 0])
+        difference() {
+            // Principal part
+            cube([mid_rear_x_length, mid_rear_x_width, 2*center_height], center = true);
+
+            // Slot grid
+            slot_grid();
+        } 
         
     //Rear part behind ESC
     render(convexity=5) // Use for simplification for calculation
@@ -378,10 +318,51 @@ module void_battery_holder(){
             color("green")
                     cube([battery_hole_length,4*ct_height, battery_hole_width]);  
                     
+        translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);       
+     
+        translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+               
+        translate([battery_x_pos_7,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_7,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);          
+          
+                    
      }// End of union 2
 
 }
 
+module cyl_with_fillet(h, r, fillet_r) {
+
+    union() {
+        // cylindre principal
+        cylinder(h = h, r = r, $fn = 64, center = false);
+
+        // congé de pied (cône tronqué)
+        translate([0,0,h-1])
+        cylinder(
+            h = fillet_r,
+            r1 = r,
+            r2 = r+ fillet_r,
+            $fn = 64
+        );
+    }
+}
 
 module tawaki_pin_support(){
 
@@ -390,7 +371,7 @@ module tawaki_pin_support(){
         rotate([90,0,0])                    
             color("grey")
                 difference(){
-                    cylinder(h = tawaki_pin_height, r = tawaki_ext_pin_rad, center = false);
+                    cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }
     //Tawaki pin support definition 2                
@@ -398,7 +379,7 @@ module tawaki_pin_support(){
         rotate([90,0,0])                    
             color("grey")
                 difference(){
-                    cylinder(h = tawaki_pin_height, r = tawaki_ext_pin_rad, center = false);
+                    cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }                
     //Tawaki pin support definition 3                
@@ -406,7 +387,7 @@ module tawaki_pin_support(){
         rotate([90,0,0])                    
             color("grey")
                 difference(){
-                    cylinder(h = tawaki_pin_height, r = tawaki_ext_pin_rad, center = false);
+                    cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }                
     //Tawaki pin support definition 4                
@@ -414,7 +395,7 @@ module tawaki_pin_support(){
         rotate([90,0,0])                    
             color("grey")
                 difference(){
-                    cylinder(h = tawaki_pin_height, r = tawaki_ext_pin_rad, center = false);
+                    cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }
 
@@ -428,7 +409,7 @@ module esc_pin_support(){
         rotate([90,0,0])                    
             color("grey")
                 difference(){
-                    cylinder(h = esc_pin_height, r = esc_ext_pin_rad, center = false);
+                    cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
                 }
     //ESC pin support definition 2                
@@ -436,7 +417,7 @@ module esc_pin_support(){
         rotate([90,0,0])                    
             color("grey")
                 difference(){
-                    cylinder(h = esc_pin_height, r = esc_ext_pin_rad, center = false);
+                   cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
                 }                
     //ESC pin support definition 3                
@@ -444,7 +425,7 @@ module esc_pin_support(){
         rotate([90,0,0])                    
             color("grey")
                 difference(){
-                    cylinder(h = esc_pin_height, r = esc_ext_pin_rad, center = false);
+                    cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
                 }                
     //ESC pin support definition 4                
@@ -452,7 +433,7 @@ module esc_pin_support(){
         rotate([90,0,0])                    
             color("grey")
                 difference(){
-                    cylinder(h = esc_pin_height, r = esc_ext_pin_rad, center = false);
+                    cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
                 }   
 
