@@ -40,12 +40,12 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// Issue root ortho spar base :OK
-// motor arm thing ? 
-// Trou aile tete servo
-// Main stage spar 
+// motor arm thing : OK
+// Trou aile tete servo : OK
+// Main stage spar : OK
 
-// Clamp fixation piece and remove attach
+// Clamp fixation piece and remove ancienne attach
+// Bigger attach on wingtip
 
 // Technique clean Chat
 // fuselage 
@@ -81,10 +81,10 @@ Right_side = false;
 
 // Choose one at a time
 Aileron_part = false;
-Root_part = false;
+Root_part = true;
 Mid_part = false;
 Tip_part = false;
-Mid_Aileron_part = true;
+Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
@@ -92,7 +92,7 @@ Servo_horn = false;
 Center_part = false;
 
 //**************** Quality settings **********//
-draft_quality = false;
+draft_quality = true;
 $fa = draft_quality?1:5; //Maximum angle between two segments. → Smaller = more segments = smoother.
 $fs = draft_quality?0.1:1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
 wing_sections = draft_quality?5:30; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
@@ -121,7 +121,7 @@ motor_arm_screw_fit_offset = 2; // Offset to adjust screw position after rotatio
 dummy_motor = false; // Parameters to see how the helix is positionned in comparison of the aircraft
 motor_arm_grav_center_offset = 35;
 motor_arm_to_wing_hull = 10; //Length of hull for transition from motor arm to wings
-motor_arm_attach_to_wing = true;
+gravity_line_y_offset = -1; // Y offset management on motor arm
 // More parameters are available inside the motor_arm module
 
 
@@ -141,7 +141,7 @@ gravity_center_plot = false; //Green
 //**************** Fuselage and center part **********//
 center_width = 80; //55;
 center_length = 350;//275;
-center_height = 14;
+center_height = 15;
 center_part_y_offset = 1;
 main_stage_x_offset = center_length/4;
 fuselage_x_offset = center_length/3;
@@ -365,6 +365,9 @@ aileron_start_z = wing_root_mm+ motor_arm_width+motor_arm_to_wing_hull;   // Ail
 aileron_end_z = wing_root_mm + motor_arm_width + wing_mid_mm; // Aileron dimension on Z axis on Trailing Edge
 //******//
 
+//**************** Clamp attach **********//
+clamp_attach = true;
+
 
 //**************** Other settings **********//
 slice_ext_width = 0.6;//Used for some of the interfacing and gap width values
@@ -424,6 +427,7 @@ module wing_full_system(aero_grav_center) {
         if (create_winglet) winglet_main(winglet_y_pos);
         
         main_create_ailerons(); // Create aileron
+
 
 
     }
@@ -493,7 +497,7 @@ module wing_inner_grid() {
 
 
 //-----------------------------------------------------------
-// INTERNAL VOIDS (spar, servo, aileron, winglet)
+// INTERNAL VOIDS (spar, servo, aileron, winglet, clamp, ...)
 //-----------------------------------------------------------
 module wing_voids() {
     union() {
@@ -502,6 +506,7 @@ module wing_voids() {
         if (create_winglet) Create_winglet_connection_void();
         if (root_cab_hole) root_cables_void_main(); 
         //if (create_servo) servo_void_block();
+        if (clamp_attach) clamp_fixation_void(wing_root_chord_mm);
     }
 }
 
@@ -521,7 +526,7 @@ module wing_modif(aero_grav_center) {
 
         //if (create_servo) servo_block();
         
-        if (motor_arm_attach_to_wing) motor_arm_to_wing_attach_void(aero_grav_center);
+        //if (motor_arm_attach_to_wing) motor_arm_to_wing_attach_void(aero_grav_center);
         
         if (winglet_arm_attach_to_wing) {
             winglet_to_wing_attach_void(); 
@@ -531,6 +536,11 @@ module wing_modif(aero_grav_center) {
         if (root_cab_hole) {
             root_cables_hole_main(); 
         }
+        
+        if (clamp_attach) {
+            clamp_fixation_removal(wing_root_chord_mm); 
+        }
+
     }
 }
 
@@ -668,6 +678,7 @@ module motor_arm_main(aero_grav_center) {
             if (create_servo) {
             servo_void_block(); //We remove the servo from the motor arms
             servo_horn_connection(true);
+            clamp_fixation_removal(wing_root_chord_mm); //Clamp fixation btwn motor arm and wing
             }
                         
          }//End of difference
@@ -741,8 +752,6 @@ else
     echo(str("[SPAR] Spar 2 at ",spar_hole_perc_2,"% from LE is ", spar_hole_length_2 + spar_inser_lgth_into_center_part, "mm length."));    
     echo(str("[SPAR] Spar 3 at ",spar_hole_perc_3,"% from LE is ", spar_hole_length_3 + spar_inser_lgth_into_center_part, "mm length."));        
    
-   //motor_arm_to_wing_attach(aero_grav_center);
-   //motor_arm_to_wing_attach_void(aero_grav_center);
     //**************** Wing **********//
     if(Full_system || Root_part || Mid_part || Tip_part || Aileron_part || Mid_Aileron_part){
              
@@ -756,13 +765,12 @@ else
  
     //**************** Motor arm **********//
     if(Left_side || Full_system) motor_arm_main(aero_grav_center);
-    if(Left_side && (Motor_arm_back || Motor_arm_full) || Full_system) motor_arm_to_wing_attach(aero_grav_center); 
     
     if(Right_side || Full_system)
         mirror([0, 0, 1]) 
             translate([0, 0, center_width]){
                 motor_arm_main(aero_grav_center); 
-                if(Motor_arm_back || Motor_arm_full || Full_system) motor_arm_to_wing_attach(aero_grav_center);}
+                }
 
     //**************** Center part **********//
     center_part_main(aero_grav_center, center_width, center_length, center_height);
@@ -809,3 +817,165 @@ else
 } //End if main
 
 //CreateFuselage();
+clamp_fixation(wing_root_chord_mm);
+//clamp_fixation_removal(wing_root_chord_mm);
+//clamp_fixation_void(wing_root_chord_mm);
+
+clamp_arm_root_perc = 106;
+
+
+module clamp_fixation(wing_root_chord)
+{
+    attach_z_top = 20;
+    attach_y_top = 2;
+    attach_x_top = 10;
+    
+    attach_z_bot = 2;
+    attach_y_bot = 13;
+    attach_x_bot = 10;
+    
+    // **** Motor Arm to Mid attach **** //
+    x1_offset_perc = 100;
+    
+    x1_offset = x1_offset_perc / 100 * wing_root_chord;
+    y1_offset = 12;
+    z1_offset = wing_root_mm + motor_arm_width+motor_arm_to_wing_hull - attach_z_top/2;
+    
+    // **** Motor Arm to Mid attach **** //
+    translate([x1_offset,y1_offset,z1_offset]) {
+        cube([attach_x_top,attach_y_top,attach_z_top]); // top part
+        translate([0,-attach_y_bot,0])
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part
+        translate([0,-attach_y_bot,attach_z_top-attach_z_bot])
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part    
+    }
+    
+    // **** Motor Arm to root attach **** //
+    x2_offset_perc = clamp_arm_root_perc;
+    
+    x2_offset = x2_offset_perc / 100 * wing_root_chord;
+    y2_offset = 10;
+    z2_offset = wing_root_mm - motor_arm_to_wing_hull - attach_z_top/2;
+    
+    // **** Motor Arm to root attach **** //
+    translate([x2_offset,y2_offset,z2_offset]) {
+        cube([attach_x_top,attach_y_top,attach_z_top]); // top part
+        translate([0,-attach_y_bot,0])
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part
+        translate([0,-attach_y_bot,attach_z_top-attach_z_bot])
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part    
+    }
+}
+
+module clamp_fixation_removal(wing_root_chord)
+{
+    
+    scale_up =1.1;
+    
+    
+    
+    attach_z_top = 20;
+    attach_y_top = 2;
+    attach_x_top = 10;
+    
+    attach_z_bot = 2;
+    attach_y_bot = 13;
+    attach_x_bot = 10;
+    
+    // **** Motor Arm to Mid attach **** //
+    x1_offset_perc = 100;
+    
+    x1_offset = x1_offset_perc / 100 * wing_root_chord - (attach_x_top*(scale_up-1)/2); // The last correction in the equation is to center after scale up
+    y1_offset = 12;
+    z1_offset = (wing_root_mm + motor_arm_width+motor_arm_to_wing_hull - attach_z_top/2);
+    
+    // **** Motor Arm to Mid attach **** //
+    translate([x1_offset,y1_offset,z1_offset]) {
+        //scale(scale_up)
+        cube([attach_x_top*scale_up,attach_y_top*scale_up,attach_z_top]); // top part
+        translate([0,-attach_y_bot,0])
+            scale(scale_up)
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part
+        translate([0,-attach_y_bot,attach_z_top-attach_z_bot])
+            scale(scale_up)
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part    
+    }//End of transalte
+    
+    
+    // **** Motor Arm to Mid attach **** //
+    x2_offset_perc = clamp_arm_root_perc;
+    
+    x2_offset = x2_offset_perc / 100 * wing_root_chord - (attach_x_top*(scale_up-1)/2); // The last correction in the equation is to center after scale up
+    y2_offset = 10;
+    z2_offset = (wing_root_mm - motor_arm_to_wing_hull - attach_z_top/2);
+    
+    // **** Motor Arm to Mid attach **** //
+    translate([x2_offset,y2_offset,z2_offset]) {
+        //scale(scale_up)
+        cube([attach_x_top*scale_up,attach_y_top*scale_up,attach_z_top]); // top part
+        translate([0,-attach_y_bot,0])
+            scale(scale_up)
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part
+        translate([0,-attach_y_bot,attach_z_top-attach_z_bot])
+            scale(scale_up)
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part    
+    }//End of transalte
+    
+}
+
+module clamp_fixation_void(wing_root_chord)
+{
+
+    scale_up =1.3;
+    
+    
+    
+    attach_z_top = 20;
+    attach_y_top = 2;
+    attach_x_top = 10;
+    
+    attach_z_bot = 2;
+    attach_y_bot = 13;
+    attach_x_bot = 10;
+    
+    // **** Motor Arm to Mid attach **** //
+    x1_offset_perc = 100;
+    
+    x1_offset = x1_offset_perc / 100 * wing_root_chord - (attach_x_top*(scale_up-1)/2); // The last correction in the equation is to center after scale up
+    y1_offset = 12- (attach_y_bot*(scale_up-1)/2);
+    z1_offset = (wing_root_mm + motor_arm_width+motor_arm_to_wing_hull - attach_z_top/2) - (attach_z_bot*(scale_up-1)/2);
+    
+    // **** Motor Arm to Mid attach **** //
+    translate([x1_offset,y1_offset,z1_offset]) {
+        //scale(scale_up)
+        cube([attach_x_top*scale_up,attach_y_top*scale_up,attach_z_top]); // top part
+        translate([0,-attach_y_bot,0])
+            scale(scale_up)
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part
+        translate([0,-attach_y_bot,attach_z_top-attach_z_bot])
+            scale(scale_up)
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part    
+    }//End of transalte
+    
+    
+    
+    // **** Motor Arm to Mid attach **** //
+    x2_offset_perc = clamp_arm_root_perc;
+    
+    x2_offset = x2_offset_perc / 100 * wing_root_chord - (attach_x_top*(scale_up-1)/2); // The last correction in the equation is to center after scale up
+    y2_offset = 10;
+    z2_offset = (wing_root_mm - motor_arm_to_wing_hull - attach_z_top/2);
+    
+    // **** Motor Arm to Mid attach **** //
+    translate([x2_offset,y2_offset,z2_offset]) {
+        //scale(scale_up)
+        cube([attach_x_top*scale_up,attach_y_top*scale_up,attach_z_top]); // top part
+        translate([0,-attach_y_bot,0])
+            scale(scale_up)
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part
+        translate([0,-attach_y_bot,attach_z_top-attach_z_bot])
+            scale(scale_up)
+            cube([attach_x_bot,attach_y_bot,attach_z_bot]); // Bot left part    
+    }//End of transalte    
+    
+}

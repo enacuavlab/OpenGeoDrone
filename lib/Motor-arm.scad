@@ -2,7 +2,6 @@ module CreateMotorArm(aero_grav_center){
 
     gravity_line_width = 1;
     gravity_line_height = 3;
-    gravity_line_y_offset = 0.5;
 
     all_pts_le = get_leading_edge_points();
     all_pts_te = get_trailing_edge_points();
@@ -499,6 +498,7 @@ module motor_arm_to_wing_attach_void(aero_grav_center){
 }
 */
 
+/*
 //Module to draw the attach between motor arm and wing
 module motor_arm_to_wing_attach(aero_grav_center){
 
@@ -519,8 +519,8 @@ module motor_arm_to_wing_attach(aero_grav_center){
             }
         }
 
-} 
-
+} */
+/*
 //Module to void the attach between motor arm and wing
 module motor_arm_to_wing_attach_void(aero_grav_center){
 
@@ -545,4 +545,4 @@ module motor_arm_to_wing_attach_void(aero_grav_center){
             }
         }
 
-}
+}*/

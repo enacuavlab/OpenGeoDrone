@@ -263,10 +263,15 @@ module ServoHorn()
      
 }
 
+ 
+ 
 //void == true -> use for removing motor part which block the horn servo movement
 module servo_horn_connection (void = false) 
 {
 
+    void_x_offset = -12;
+    void_y_offset = -8;
+    void_z_offset = -9.5;
     horn_pos_x_offset = 10;
     horn_pos_z_offset = 1.5;
     horn_dim_z = 1; //Part connected to servo
@@ -292,10 +297,10 @@ module servo_horn_connection (void = false)
 
     if(void) {
     
-
-        rotate([0, 0, servo_rotate_z_deg])
-            translate([servo_dist_le_mm + servo_dimension_perso[0]*cos(sweep_ang)+2-cmd_dim_x/3, servo_dist_depth_mm-cmd_dim_y, servo_dist_root_mm + servo_dimension_perso[2]*cos(sweep_ang)-horn_attach_dim_z])
-                cube([ 2*cmd_dim_x,4*cmd_dim_y,2*horn_attach_dim_z]);     
+                     rotate([0, 0, servo_rotate_z_deg])
+            translate([void_x_offset,void_y_offset,void_z_offset])         
+            translate([servo_dist_le_mm + servo_dimension_perso[0]*cos(sweep_ang)+2, servo_dist_depth_mm, servo_dist_root_mm + servo_dimension_perso[2]*cos(sweep_ang)-1])
+                cube([ cmd_dim_x*1.5,cmd_dim_y*3,horn_attach_dim_z]);    
     
     }
     
