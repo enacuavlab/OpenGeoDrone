@@ -1,7 +1,7 @@
 ///*** Create Winglet like a Wing ***///
 
 ///*** Main ***///
-module CreateWinglet() {
+module CreateWinglet(wglet_y_pos) {
 
     y_cube_winglet = 10; //Y dimension of the winglet taking in account for the hull
     x_offset = 5; // Offset on winglet cut for hull
@@ -18,7 +18,7 @@ module CreateWinglet() {
     pt_te_bot = find_interpolated_point(z_pos -winglet_to_wing_hull, all_pts_te);
 
     //Create winglet and attach
-    translate([pt_le_top[0]-x_offset_winglet,winglet_y_pos,z_pos])
+    translate([pt_le_top[0]-x_offset_winglet,wglet_y_pos,z_pos])
         rotate([-90,0,0])
             winglet_design();
     Create_winglet_connection();            
@@ -28,7 +28,7 @@ module CreateWinglet() {
             
         intersection(){//We keep the winglet in connection with wings only
         
-            translate([pt_le_top[0]-x_offset_winglet,winglet_y_pos,z_pos])
+            translate([pt_le_top[0]-x_offset_winglet,wglet_y_pos,z_pos])
                 rotate([-90,0,0])
                     winglet_design();
             
@@ -225,13 +225,13 @@ module Create_winglet_connection_void()
     translate([pt_start[0]-attached_1_x_pos,attached_1_y_pos,z_pos+attached_z_offset])
         rotate([180,sweep_angle,0])
             color("green") 
-                cylinder(h = attached_1_length, r = attached_1_radius*winglet_attach_void_clearance, center = false);
+                cylinder(h = attached_1_length*winglet_attach_void_clearance, r = attached_1_radius*winglet_attach_void_clearance, center = false);
 
             
     translate([pt_start[0]-attached_2_x_pos,attached_2_y_pos,z_pos+attached_z_offset])
         rotate([180,sweep_angle,0])
             color("green") 
-                cylinder(h = attached_2_length, r = attached_2_radius*winglet_attach_void_clearance, center = false);  
+                cylinder(h = attached_2_length*winglet_attach_void_clearance, r = attached_2_radius*winglet_attach_void_clearance, center = false);  
 
                 
                 

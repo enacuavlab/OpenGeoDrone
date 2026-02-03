@@ -350,14 +350,12 @@ module CreateAileron() {
 
 }
 
-
+// Function use to create void between Mid and Ailerons to allow aileron movement.
 module connection_mid_to_ailerons(connexion_void = false, ribs_void = false){
 
     cube_x = 10; //cube connection mid to aileron x dimension
     cube_y = 4; //cube connection mid to aileron y dimension
     cube_z = 0.00000001; //cube connection mid to aileron z dimension -> very low because we hull 2 surfaces together on top and bot side
-    top_y_offset = 1.5; //Offset on y axis connexion top side -> use it at last setting
-    bot_y_offset = 2.5; //Offset on y axis connexion bottom side -> use it at last setting
     circle_radius = cube_y/2.5; //circle for getting the rounding on connection
     circle_radius_small = cube_y/3; // Parameter for ellipse
     circ_pos_x = cube_x/2.4; //circle position x
