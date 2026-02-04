@@ -15,12 +15,12 @@ SIDE_PARTS=(
   Motor_arm_front
   Motor_arm_back
   Servo_horn
+  Clamp_fixation
 )
 
 #Parts which have no side
 CENTER_PARTS=(
   Center_part
-  Center_part_locker
 )
 
 
@@ -41,7 +41,7 @@ for side in "${SIDES[@]}"; do
       Right_side=$([ "$side" == "Right" ] && echo true || echo false);
       Aileron_part=false; Root_part=false; Mid_part=false; Tip_part=false;
       Mid_Aileron_part=false; Motor_arm_full=false; Motor_arm_front=false;
-      Motor_arm_back=false; Servo_horn = false; Center_part=false; Center_part_locker=false;
+      Motor_arm_back=false; Servo_horn = false; Clamp_fixation = false; Center_part=false; draft_quality = false;
       ${part}=true;
     " "$SRC"
   done
@@ -58,7 +58,7 @@ for part in "${CENTER_PARTS[@]}"; do
     Right_side=false;
     Aileron_part=false; Root_part=false; Mid_part=false; Tip_part=false;
     Mid_Aileron_part=false; Motor_arm_full=false; Motor_arm_front=false;
-    Motor_arm_back=false; Servo_horn = false; Center_part=false; Center_part_locker=false;
+    Motor_arm_back=false; Servo_horn = false; Clamp_fixation = false; Center_part=false; draft_quality = false;
     ${part}=true;
   " "$SRC"
 done
