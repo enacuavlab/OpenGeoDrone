@@ -40,14 +40,6 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// motor arm thing : OK
-// Trou aile tete servo : OK
-// Main stage spar : OK
-// Clamp fixation piece and remove ancienne attach + clean fonction and call clamp only for print sh as well and main menu : OK
-
-// Bigger attach on wingtip
-// Check bambu print
-
 // Technique clean Chat
 // fuselage 
 
@@ -75,7 +67,7 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 //****************Global Variables*****************//
 
 // Printing Mode : Choose which part of wings you want
-Full_system = false;
+Full_system = true;
 
 Left_side = true;
 Right_side = false;
@@ -85,12 +77,12 @@ Aileron_part = false;
 Root_part = false;
 Mid_part = false;
 Tip_part = false;
-Mid_Aileron_part = true;
+Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
-Center_part = false;
+Center_part = true;
 Clamp_fixation = false;
 
 //**************** Quality settings **********//
@@ -141,19 +133,33 @@ gravity_center_plot = false; //Green
 
 
 //**************** Fuselage and center part **********//
-center_width = 80; //55;
-center_length = 350;//275;
+center_width = 90; //55;
+center_length = 275;
 center_height = 15;
 center_part_y_offset = 1;
-main_stage_x_offset = center_length/4;
+main_stage_x_offset = center_length/10;
 fuselage_x_offset = center_length/3;
 fuselage_z_offset = center_width/2;
+//Battery holder void place
+battery_x_pos_6 = -5;
+battery_x_pos_1 = 35;
+battery_x_pos_7 = 85;
+battery_x_pos_2 = 100;
+battery_x_pos_3 = 125;
+battery_x_pos_4 = 170;
+battery_x_pos_5 = 190;
+//Tawaki x offset on center part position
+tawaki_x_offset_pos = 60;
+//ESC x offset on center part position (from rear motor end)
+esc_x_offset_pos = 8;
+
+
 nozzle_length = 30;
-L_total = center_length - main_stage_x_offset+ fuselage_x_offset;//300;          // longueur du fuselage
-D_front = center_width*0.5;           // diamètre au nez
-D_max   = center_width*0.7;           // diamètre maximum au centre
-D_tail  = center_width*0.7;           // diamètre final
-num       = 80;            // nombre de sections (plus = plus lisse)
+L_total = center_length - main_stage_x_offset+ fuselage_x_offset;//300;          // fuselage length
+D_front = center_width*0.5;           // noze diameter
+D_max   = center_width*0.7;           // max center diameter
+D_tail  = center_width*0.7;           // final diameter
+num       = 80;            // sections numbers (+ = smoother)
 //******//
 
 
@@ -846,3 +852,4 @@ else
 } //End if main
 
 //CreateFuselage(); 
+

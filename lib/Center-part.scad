@@ -103,16 +103,9 @@ main_stage_y_width = 2*ct_height/3;
 gravity_line_width = 1;
 gravity_line_height = 0.2;
 
-battery_width = 70;
+battery_width = ct_width -10; // Distance of battery holder void from extremity
 battery_hole_width = 8;
 battery_hole_length = 25;
-battery_x_pos_1 = 35;
-battery_x_pos_2 = 100;
-battery_x_pos_3 = 75;
-battery_x_pos_4 = 145;
-battery_x_pos_5 = 165;
-battery_x_pos_6 = -5;
-battery_x_pos_7 = -25;
 
 
 rear_motor_int_circle_r = 4.75;
@@ -121,7 +114,7 @@ rear_motor_int_circ_attach_dist_to_ct = 8 + rear_motor_int_circ_attach_r;
 rear_motor_square_support_attach_length = 32;
 rear_motor_square_support_attach_width = 4;
 
-tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad - rear_motor_square_support_attach_length - 15; //200 + tawaki_pin_space_length;
+tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad - rear_motor_square_support_attach_length - esc_x_offset_pos;
 
 main_part_rear_spar_screw_radius = 1.13;
 
@@ -136,19 +129,19 @@ slot_spacing  = 10;
 grid_angle    = 45;  
 
 front_x_length = tawaki_pin_space_length - front_offset -2.5;
-front_x_offset = front_offset+ front_x_length/2 +1;// + tawaki_pin_space_length/2;  
+front_x_offset = tawaki_x_offset_pos + front_offset+ front_x_length/2 +1;// + tawaki_pin_space_length/2;  
 front_x_width = ct_width - 15; //tawaki_pin_space_width - 2*tawaki_ext_pin_rad; 
-very_front_x_length = main_stage_x_offset - front_offset-1.5;
+very_front_x_length = tawaki_x_offset_pos + main_stage_x_offset - front_offset-1.5;
 very_front_x_offset = front_offset+ very_front_x_length/2 - main_stage_x_offset; 
-mid_x_length = tawaki_esc_space-tawaki_pin_space_length-2*tawaki_ext_pin_rad - 3;
-mid_x_offset = tawaki_pin_space_length + mid_x_length/2 + 2*tawaki_ext_pin_rad+2;
+mid_x_length = tawaki_esc_space-tawaki_pin_space_length-2*tawaki_ext_pin_rad - 3 - tawaki_x_offset_pos;
+mid_x_offset = tawaki_x_offset_pos + tawaki_pin_space_length + mid_x_length/2 + 2*tawaki_ext_pin_rad+2;
 //mid_x_offset = tawaki_esc_space  - mid_x_length/2;
 mid_x_width = ct_width - 15;
 mid_rear_x_length = esc_pin_space_length - 3*esc_ext_pin_rad;
-mid_rear_x_offset = ct_length - main_stage_x_offset - esc_pin_space_length - rear_motor_square_support_attach_length - 3;
+mid_rear_x_offset = tawaki_esc_space + 2.5*esc_ext_pin_rad + mid_rear_x_length/2; //ct_length - main_stage_x_offset - esc_pin_space_length - rear_motor_square_support_attach_length - 3;
 mid_rear_x_width = ct_width - 15;
-rear_x_length = 2.5*rear_motor_square_support_attach_length;
-rear_x_offset = tawaki_pin_space_length+2*tawaki_ext_pin_rad+ rear_x_length/2 + tawaki_esc_space + esc_ext_pin_rad;
+rear_x_length = ct_length- main_stage_x_offset - (tawaki_esc_space + 5*esc_ext_pin_rad + mid_rear_x_length) - front_offset;
+rear_x_offset = tawaki_esc_space + 5.5*esc_ext_pin_rad + mid_rear_x_length+ rear_x_length/2;
 rear_x_width = ct_width - 15;
 
 
@@ -367,7 +360,7 @@ module cyl_with_fillet(h, r, fillet_r) {
 module tawaki_pin_support(){
 
 //Tawaki pin support definition 1                
-    translate([tawaki_ext_pin_rad,main_stage_y_width + tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
+    translate([tawaki_x_offset_pos + tawaki_ext_pin_rad,main_stage_y_width + tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
         rotate([90,0,0])                    
             color("grey")
                 difference(){
@@ -375,7 +368,7 @@ module tawaki_pin_support(){
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }
     //Tawaki pin support definition 2                
-    translate([tawaki_ext_pin_rad,main_stage_y_width + tawaki_pin_height,-ct_width/2+tawaki_pin_space_width/2])
+    translate([tawaki_x_offset_pos + tawaki_ext_pin_rad,main_stage_y_width + tawaki_pin_height,-ct_width/2+tawaki_pin_space_width/2])
         rotate([90,0,0])                    
             color("grey")
                 difference(){
@@ -383,7 +376,7 @@ module tawaki_pin_support(){
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }                
     //Tawaki pin support definition 3                
-    translate([tawaki_ext_pin_rad + tawaki_pin_space_length,main_stage_y_width + tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
+    translate([tawaki_x_offset_pos + tawaki_ext_pin_rad + tawaki_pin_space_length,main_stage_y_width + tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
         rotate([90,0,0])                    
             color("grey")
                 difference(){
@@ -391,7 +384,7 @@ module tawaki_pin_support(){
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }                
     //Tawaki pin support definition 4                
-    translate([tawaki_ext_pin_rad + tawaki_pin_space_length,main_stage_y_width + tawaki_pin_height,-ct_width/2+tawaki_pin_space_width/2])
+    translate([tawaki_x_offset_pos + tawaki_ext_pin_rad + tawaki_pin_space_length,main_stage_y_width + tawaki_pin_height,-ct_width/2+tawaki_pin_space_width/2])
         rotate([90,0,0])                    
             color("grey")
                 difference(){
