@@ -113,6 +113,7 @@ rear_motor_int_circ_attach_r = 1.5;
 rear_motor_int_circ_attach_dist_to_ct = 8 + rear_motor_int_circ_attach_r;
 rear_motor_square_support_attach_length = 32;
 rear_motor_square_support_attach_width = 4;
+y_offset_rear_motor = rear_motor_square_support_attach_length/2 + ct_height/2;
 
 tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad - rear_motor_square_support_attach_length - esc_x_offset_pos;
 
@@ -435,24 +436,26 @@ module esc_pin_support(){
 
 module rear_motor_attach(){
 
-    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width,-ct_width/2+ rear_motor_square_support_attach_length/2])
+    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width - y_offset_rear_motor,-ct_width/2+ rear_motor_square_support_attach_length/2])
         rotate([0,180,0])
         linear_extrude(height = rear_motor_square_support_attach_width)
         polygon(points=[[0, 0], [0, rear_motor_square_support_attach_length], [rear_motor_square_support_attach_length, 0]]);
 
-    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width,-ct_width/2- rear_motor_square_support_attach_length/2+rear_motor_square_support_attach_width])
+    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width - y_offset_rear_motor,-ct_width/2- rear_motor_square_support_attach_length/2+rear_motor_square_support_attach_width])
         rotate([0,180,0])
         linear_extrude(height = rear_motor_square_support_attach_width)
         polygon(points=[[0, 0], [0, rear_motor_square_support_attach_length], [rear_motor_square_support_attach_length, 0]]);
 
         
 
-    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width + rear_motor_square_support_attach_length/2,-ct_width/2])
+    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width + rear_motor_square_support_attach_length/2 - y_offset_rear_motor,-ct_width/2])
+
         rotate([0,90,0])
     difference(){
         linear_extrude(rear_motor_square_support_attach_width)
             square([rear_motor_square_support_attach_length, rear_motor_square_support_attach_length], center=true);
             
+        rotate([45,0,0])    
         linear_extrude(rear_motor_square_support_attach_width){
         circle(r = rear_motor_int_circle_r); //hole for rear motor tree passage
 
@@ -498,4 +501,4 @@ module rear_motor_attach(){
 
 
  
-}    
+}

@@ -1,7 +1,16 @@
+//// **** Parameters **** ////
+dummy_motor_base_radius = 9.5;
+dummy_motor_base_height = 20; 
+dummy_helix_radius = 90; //6 inch
+dummy_helix_height = 20;
+
+
+
 module CreateMotorArm(aero_grav_center){
 
     gravity_line_width = 1;
     gravity_line_height = 3;
+    motor_arm_x_pos = aero_grav_center[1] + motor_arm_grav_center_offset;
 
     all_pts_le = get_leading_edge_points();
     all_pts_te = get_trailing_edge_points();
@@ -22,10 +31,14 @@ module CreateMotorArm(aero_grav_center){
 motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
 
     //**************** Gravity Line Creation **********//
+    if(Motor_arm_front || Motor_arm_full) { //We draw only on full and front arm
+    
     translate([aero_grav_center[1],-ellipse_maj_ax + gravity_line_height+gravity_line_y_offset,wing_root_mm- ellipse_maj_ax])  
         color("red")
             //cube([gravity_line_width,gravity_line_height, 4*ellipse_maj_ax]);
             cylinder(h=4*ellipse_maj_ax, r=gravity_line_width, center =false);
+            
+     }
             
     //**************** Motor Arm **********//
                 
@@ -110,7 +123,41 @@ motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_leng
             }//End of hull
             motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
             
-        } 
+        }
+       
+       
+
+    ////   **** Dummy motor ****   ////
+    
+              if(dummy_motor){
+    translate([ motor_arm_x_pos + motor_arm_length_back, motor_arm_y_offset + motor_arm_height, wing_root_mm+ellipse_maj_ax])
+        rotate([ 0, 90 - motor_arm_tilt_angle, 90 ])
+            union(){
+            color("red")
+                linear_extrude(height = dummy_motor_base_height)
+                    circle(r = dummy_motor_base_radius, $fn=100);
+            
+             translate([ 0, 0, dummy_motor_base_height])    
+                color("green")
+                    linear_extrude(height = dummy_helix_height)
+                        circle(r = dummy_helix_radius, $fn=100);   
+            }
+
+    translate([ motor_arm_x_pos - motor_arm_length_front, motor_arm_y_offset + motor_arm_height, wing_root_mm+ellipse_maj_ax])
+        rotate([ 0, 90 - motor_arm_tilt_angle, 90 ])
+            union(){
+            color("red")
+                linear_extrude(height = dummy_motor_base_height)
+                    circle(r = dummy_motor_base_radius, $fn=100);
+            
+             translate([ 0, 0, dummy_motor_base_height])    
+                color("green")
+                    linear_extrude(height = dummy_helix_height)
+                        circle(r = dummy_helix_radius, $fn=100);   
+            }
+            
+            
+        } // End dummy_motor 
         
 }
 
@@ -126,11 +173,7 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
     screw_hole_2 = 1.5;
     motor_footprint_long = 8;//9.5; Parameters to change motor screw holes position
     motor_footprint_short = 8; //Parameters to change motor screw holes position
-    dummy_motor_base_radius = 9.5;
-    dummy_motor_base_height = 20;
     motor_support_scale = 1.8;
-    dummy_helix_radius = 90; //6 inch
-    dummy_helix_height = 20;
     x_pos_screw_long = cos(45) * (motor_footprint_long );
     y_pos_screw_long = sin(45) * (motor_footprint_long );
     x_pos_screw_short = cos(45) * (motor_footprint_short );
@@ -321,37 +364,6 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
     
     }//End of difference       
 //
-        if(dummy_motor){
-    translate([ motor_x_pos + arm_length_back, y_offset + motor_height, wing_root_mm+a_ellipse])
-        rotate([ 0, 90 - arm_tilt_angle, 90 ])
-            union(){
-            color("red")
-                linear_extrude(height = dummy_motor_base_height)
-                    circle(r = dummy_motor_base_radius, $fn=100);
-            
-             translate([ 0, 0, dummy_motor_base_height])    
-                color("green")
-                    linear_extrude(height = dummy_helix_height)
-                        circle(r = dummy_helix_radius, $fn=100);   
-            }
-
-    translate([ motor_x_pos - arm_length_front, y_offset + motor_height, wing_root_mm+a_ellipse])
-        rotate([ 0, 90 - arm_tilt_angle, 90 ])
-            union(){
-            color("red")
-                linear_extrude(height = dummy_motor_base_height)
-                    circle(r = dummy_motor_base_radius, $fn=100);
-            
-             translate([ 0, 0, dummy_motor_base_height])    
-                color("green")
-                    linear_extrude(height = dummy_helix_height)
-                        circle(r = dummy_helix_radius, $fn=100);   
-            }
-            
-            
-        } // End dummy_motor
-
-
         
     } //End Union for whole arm
       
