@@ -40,7 +40,10 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
+// Inverse dilation wing to offset winglet => easier iteration : OK
+// winglet clamp : OK
 // fuselage : motor position and fuselage
+// Arm + center + fuselage => angle pitch comp
 // Technique clean Chat
 
 
@@ -77,7 +80,7 @@ Right_side = false;
 Aileron_part = false;
 Root_part = false;
 Mid_part = false;
-Tip_part = false;
+Tip_part = true;
 Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
@@ -87,7 +90,7 @@ Center_part = false;
 Clamp_fixation = false;
 
 //**************** Quality settings **********//
-draft_quality = true;
+draft_quality = false;
 $fa = draft_quality?1:5; //Maximum angle between two segments. → Smaller = more segments = smoother.
 $fs = draft_quality?0.1:1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
 wing_sections = draft_quality?5:30; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
@@ -248,8 +251,9 @@ lead_edge_curve_y_winglet = [
 winglet_y_pos = -3.5; //Y offset management
 winglet_y_pos_void = -4.5; // Y offset for erase overlapping part between wing and winglet
 base_length = 4*wing_root_chord_mm/10;
-winglet_attach_dilatation_offset_PLA = 1.01;// We use this offset for the dilation of material after print to keep the right dimensions
+winglet_attach_dilatation_offset_PLA = 1.1;// We use this offset for the dilation of material after print to keep the right dimensions ==> act on the winglet attach side
 winglet_attach_void_clearance = 1.5; // We use this offset to create void in the ribs structure
+winglet_attach_sweep_angle = 0;//sweep_angle;
     
 attached_1_x_pos = -30;
 attached_1_y_pos = 1.5;
@@ -382,10 +386,12 @@ debug_clamp_fixation_void = false;
 clamp_arm_mid_perc = 100;
 clamp_arm_root_perc = 106;
 clamp_root_center_perc = 43;
+clamp_mid_winglet_perc = 163;
 //Settings for y axis adjustement in on y axis in mm
 clamp_arm_mid_y_offset = 12;
 clamp_arm_root_y_offset = 10;
 clamp_root_center_y_offset = 12;
+clamp_mid_winglet_y_offset = 7;
 
 //**************** Other settings **********//
 slice_ext_width = 0.6;//Used for some of the interfacing and gap width values
@@ -548,7 +554,7 @@ module wing_modif(aero_grav_center) {
         //if (motor_arm_attach_to_wing) motor_arm_to_wing_attach_void(aero_grav_center);
         
         if (winglet_arm_attach_to_wing) {
-            winglet_to_wing_attach_void(); 
+            //winglet_to_wing_hook_void(); 
             winglet_main(winglet_y_pos_void); //remove the overlapping part of wing on winglet
         }
         
@@ -711,7 +717,14 @@ module motor_arm_main(aero_grav_center) {
 //-----------------------------------------------------------
 module winglet_main(winglet_y_p) {
 
-    CreateWinglet(winglet_y_p);
+    difference() {
+        CreateWinglet(winglet_y_p);
+        
+        if (clamp_attach) {
+            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); //Remove clamp from winglet
+        }//End if
+        
+    } //End difference
 }
 
 
@@ -852,4 +865,4 @@ else
 } //End if main
 
 //CreateFuselage(); 
-
+//clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 

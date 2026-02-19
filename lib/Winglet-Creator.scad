@@ -1,4 +1,6 @@
 ///*** Create Winglet like a Wing ***///
+hook_x_pos = 2.65;
+hook_y_pos = -3.4;
 
 ///*** Main ***///
 module CreateWinglet(wglet_y_pos) {
@@ -22,7 +24,7 @@ module CreateWinglet(wglet_y_pos) {
         rotate([-90,0,0])
             winglet_design();
     Create_winglet_connection();            
-    winglet_to_wing_attach();  
+    //winglet_to_wing_hook();  
 
     hull(){//connect winglet to wing
             
@@ -52,16 +54,16 @@ module CreateWinglet(wglet_y_pos) {
 
 
 
-//Module to draw the attach between winglet and wing
-module winglet_to_wing_attach(){
+//Module to draw the hook attach between winglet and wing
+module winglet_to_wing_hook(){
 
     attach_height = 12;//5; //x axis
     attach_y = 5; //z axis
     attach_x = 1.2; //y axis
-    crochet_scale = 1.5;
+    crochet_scale = 1.8; // Adjust the size of the hook on y axis
     z_pos = wing_root_mm + wing_mid_mm + motor_arm_width - winglet_to_wing_hull;
-    y_offset = -3.4;//-2.8;
-    x_offset = 2.9*aileron_thickness; // Offset from TE
+    y_offset = hook_y_pos;
+    x_offset = hook_x_pos*aileron_thickness; // Offset from TE
     all_pts_te = get_trailing_edge_points();
     pt_te_top = find_interpolated_point(z_pos, all_pts_te);
     x_pos = pt_te_top[0]-x_offset;
@@ -77,18 +79,18 @@ module winglet_to_wing_attach(){
 
 } 
 
-//Module to void the attach between winglet and wing
-module winglet_to_wing_attach_void(){
+//Module to void the hook attach between winglet and wing
+module winglet_to_wing_hook_void(){
 
     scale_up = 1.1;// We use this parameter to get space for the parts to imbricate
     height = 12;//5;
     attach_height = height*scale_up;
     attach_y = 5;//3;
     attach_x = 1.2*scale_up;
-    crochet_scale = 1.5;
+    crochet_scale = 1.8; // Adjust the size of the hook on y axis
     z_pos = wing_root_mm + wing_mid_mm + motor_arm_width - winglet_to_wing_hull;
-    y_offset = -3.4;//-2.8;
-    x_offset = 2.9*aileron_thickness; // Offset from TE
+    y_offset = hook_y_pos;
+    x_offset = hook_x_pos*aileron_thickness; // Offset from TE
     all_pts_te = get_trailing_edge_points();
     pt_te_top = find_interpolated_point(z_pos, all_pts_te);    
     x_pos = pt_te_top[0]-x_offset;    
@@ -124,17 +126,17 @@ module Create_winglet_connection(cube_for_vase = false)
     
 
     translate([pt_start[0]-attached_1_x_pos,attached_1_y_pos,z_pos+attached_z_offset]){
-        rotate([180,sweep_angle,0])
+        rotate([180,winglet_attach_sweep_angle,0])
             color("green") 
             if(cube_for_vase){ // In vase mode, we create the hole in the mid part, we therefore offset the hole to avoid too tight junction 
-                cylinder(h = attached_1_length/scale_factor, r = attached_1_radius*winglet_attach_dilatation_offset_PLA, center = false);
+                cylinder(h = attached_1_length/scale_factor, r = attached_1_radius, center = false);
             }
             else {
-                 cylinder(h = attached_1_length*scale_factor, r = attached_1_radius, center = false);
+                 cylinder(h = attached_1_length*scale_factor, r = attached_1_radius/winglet_attach_dilatation_offset_PLA, center = false);
             }
                 
             if(cube_for_vase){
-                rotate([0,sweep_angle,0])
+                rotate([0,winglet_attach_sweep_angle,0])
                     translate([0,0,-cube_for_vase_z1])
                         color("green")   
                             cube([slice_gap_width,cube_for_vase_y1,cube_for_vase_z1]);
@@ -143,17 +145,17 @@ module Create_winglet_connection(cube_for_vase = false)
                 }                
             
     translate([pt_start[0]-attached_2_x_pos,attached_2_y_pos,z_pos + attached_z_offset]){
-        rotate([180,sweep_angle,0])
+        rotate([180,winglet_attach_sweep_angle,0])
             color("green") 
             if(cube_for_vase){   // In vase mode, we create the hole in the mid part, we therefore offset the hole to avoid too tight junction         
-                cylinder(h = attached_2_length/scale_factor, r = attached_2_radius*winglet_attach_dilatation_offset_PLA, center = false);
+                cylinder(h = attached_2_length/scale_factor, r = attached_2_radius, center = false);
             }
             else {
-                 cylinder(h = attached_2_length*scale_factor, r = attached_2_radius, center = false);
+                 cylinder(h = attached_2_length*scale_factor, r = attached_2_radius/winglet_attach_dilatation_offset_PLA, center = false);
             }
             
             if(cube_for_vase){
-                rotate([0,sweep_angle,0])    
+                rotate([0,winglet_attach_sweep_angle,0])    
                     translate([0,0,-cube_for_vase_z2])
                         color("green")   
                             cube([slice_gap_width,cube_for_vase_y2,cube_for_vase_z2]);
@@ -172,13 +174,13 @@ module Create_winglet_connection_void()
     
 
     translate([pt_start[0]-attached_1_x_pos,attached_1_y_pos,z_pos+attached_z_offset])
-        rotate([180,sweep_angle,0])
+        rotate([180,winglet_attach_sweep_angle,0])
             color("green") 
                 cylinder(h = attached_1_length*winglet_attach_void_clearance, r = attached_1_radius*winglet_attach_void_clearance, center = false);
 
             
     translate([pt_start[0]-attached_2_x_pos,attached_2_y_pos,z_pos+attached_z_offset])
-        rotate([180,sweep_angle,0])
+        rotate([180,winglet_attach_sweep_angle,0])
             color("green") 
                 cylinder(h = attached_2_length*winglet_attach_void_clearance, r = attached_2_radius*winglet_attach_void_clearance, center = false);  
 
