@@ -1,19 +1,35 @@
+// TOP LEVEL Parameters
+rear_motor_square_support_attach_width = 4;
+rear_motor_square_support_attach_length = 28;
+
 // ------------------------
 // FUSELAGE GENERATOR
 // ------------------------
-module CreateFuselage() {
+module CreateFuselage(fuse_ellipse_param) {
 
+    s = fuselage_sections();
+
+    //Main fuselage part
     translate([-fuselage_x_offset,0,-fuselage_z_offset])
         rotate([0,90,0]){
-            s = fuselage_sections();
-            bubble_bezier_fit_elliptic(length=nozzle_length, rx=s[0][1], ry=s[0][2]);
+            //bubble_bezier_fit_elliptic(length=nozzle_length, rx=s[0][1], ry=s[0][2]);
+            bubble_bezier_fit_superellipse(length=nozzle_length, rx=s[0][1], ry=s[0][2], fuse_ellipse_param);
             for(i = [0 : len(s)-2]) {
                 hull() {
-                    frame(s[i][0],   s[i][1], s[i][2]);
-                    frame(s[i+1][0], s[i+1][1], s[i+1][2]);
+                    frame(s[i][0],   s[i][1], s[i][2],fuse_ellipse_param);
+                    frame(s[i+1][0], s[i+1][1], s[i+1][2],fuse_ellipse_param);
                 }
             }
         }
+        
+        
+        //tail fuselage part, here we need to hull from the end of fuselage to tail of fuselage
+        hull() {
+            translate([-fuselage_x_offset,0,-fuselage_z_offset])
+                rotate([0,90,0])
+                    frame(s[len(s)-1][0], s[len(s)-1][1], s[len(s)-1][2],fuse_ellipse_param);
+            tail_fuselage();
+        }//End of hull
 
 }
 
@@ -32,16 +48,28 @@ function fuselage_sections() =
     ];
 
 
+// frame super-ellipse generalised / anisotrope (rounded rectangle)
+module frame(z, rx, ry, n = [4,4]){
 
-// frame in ellipse
-module frame(z, rx, ry){
     hull_width = 0.00000001;
-    
+    steps = 100;
+
     translate([0,0,z])
-        scale([rx, ry, 1])
-            linear_extrude(h=hull_width,center=false)
-                circle(r=1, $fn=80);
+        linear_extrude(h=hull_width, center=false)
+            polygon(points = [
+                for (i = [0:steps-1])
+                    let(
+                        a = 360 * i/steps,
+                        ca = cos(a),
+                        sa = sin(a),
+
+                        x = rx * sign(ca) * pow(abs(ca), 2/n[0]),
+                        y = ry * sign(sa) * pow(abs(sa), 2/n[1])
+                    )
+                    [x, y]
+            ]);
 }
+
 
 module bubble_bezier_fit_elliptic(length, rx, ry) {
     // rx = X semi-axis of the first fuselage section
@@ -72,16 +100,85 @@ module bubble_bezier_fit_elliptic(length, rx, ry) {
 }
 
 
+module bubble_bezier_fit_superellipse(length, rx, ry, n = [4,4]){
 
+    
+    P0 = [0,1];
+    P1 = [-0.05,1];
+    P2 = [-0.75,0.55];
+    P3 = [-1,0];
+
+    function bezier(t,p0,p1,p2,p3) =
+        (1-t)*(1-t)*(1-t)*p0 +
+        3*(1-t)*(1-t)*t*p1 +
+        3*(1-t)*t*t*p2 +
+        t*t*t*p3;
+
+    steps = 40;
+
+    // Section Generation
+    sections = [
+        for(i=[0:steps])
+            let(
+                t = i/steps,
+                p = bezier(t,P0,P1,P2,P3),
+                z = p[0] * length,
+                scale_factor = p[1]
+            )
+            [z, rx*scale_factor, ry*scale_factor]
+    ];
+
+    // Loft progressive
+    for(i=[0:len(sections)-2]){
+        hull(){
+            frame(
+                sections[i][0],
+                sections[i][1],
+                sections[i][2],
+                n
+            );
+            frame(
+                sections[i+1][0],
+                sections[i+1][1],
+                sections[i+1][2],
+                n
+            );
+        }
+    }
+}
+
+module tail_fuselage(){
+
+    hull_width = 0.00000001;
+    poly_size = rear_motor_square_support_attach_length/2; //Size of original rear motor support square
+    hexa_factor = 2.5; //extension on sides of the hexagon
+    polygon_points = [[poly_size, -poly_size], [-poly_size, -poly_size],[-hexa_factor*poly_size, -0], [-poly_size, poly_size],[poly_size, poly_size], [hexa_factor*poly_size, 0]]; // Points of polygon
+
+    translate([center_length -main_stage_x_offset,main_stage_y_width-center_height/2 +center_part_y_offset ,-center_width/2]) {
+        rotate([0,90,0]) {
+        
+            linear_extrude(h=hull_width)
+                offset(r=6)
+                    offset(delta=-6)
+                        polygon(points=polygon_points);
+                
+        }//End of rotate
+    }//End of translate
+}
 
 // ------------------------
 // CENTER PART
 // ------------------------
 
-module center_part(aero_grav_center, ct_width, ct_length, ct_height){    
 
+module center_part(aero_grav_center, ct_width, ct_length, ct_height, rear_motor_mode = false, shape_only_mode = false){    
 
- 
+// 
+// Parameters
+// ------------------------
+ct_width =  center_width;
+ct_length = center_length;
+ct_height = center_height; 
 size = [ct_length, ct_width];    // Square size (X, Y)
 radius = 3;         // Radius of rounded corners
 tawaki_int_pin_rad = 1.25;
@@ -98,24 +195,22 @@ esc_pin_height = 5;
 esc_pin_space_length = 32;
 esc_pin_space_width = 30.7;
 
-main_stage_y_width = 2*ct_height/3;
 
 gravity_line_width = 1;
 gravity_line_height = 0.2;
 
-battery_width = ct_width -10; // Distance of battery holder void from extremity
-battery_hole_width = 8;
+battery_width = ct_width -20;//-10; // Distance of battery holder void from extremity
+battery_hole_width = 15;
 battery_hole_length = 25;
 
 
 rear_motor_int_circle_r = 4.75;
 rear_motor_int_circ_attach_r = 1.5;
 rear_motor_int_circ_attach_dist_to_ct = 8 + rear_motor_int_circ_attach_r;
-rear_motor_square_support_attach_length = 32;
-rear_motor_square_support_attach_width = 4;
+rear_motor_screw_hole = 1.25;
 y_offset_rear_motor = rear_motor_square_support_attach_length/2 + ct_height/2;
 
-tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad - rear_motor_square_support_attach_length - esc_x_offset_pos;
+tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad  - esc_x_offset_pos; //- rear_motor_square_support_attach_length
 
 main_part_rear_spar_screw_radius = 1.13;
 
@@ -131,51 +226,77 @@ grid_angle    = 45;
 
 front_x_length = tawaki_pin_space_length - front_offset -2.5;
 front_x_offset = tawaki_x_offset_pos + front_offset+ front_x_length/2 +1;// + tawaki_pin_space_length/2;  
-front_x_width = ct_width - 15; //tawaki_pin_space_width - 2*tawaki_ext_pin_rad; 
+front_x_width = ct_width - 25;//15; //tawaki_pin_space_width - 2*tawaki_ext_pin_rad; 
 very_front_x_length = tawaki_x_offset_pos + main_stage_x_offset - front_offset-1.5;
 very_front_x_offset = front_offset+ very_front_x_length/2 - main_stage_x_offset; 
 mid_x_length = tawaki_esc_space-tawaki_pin_space_length-2*tawaki_ext_pin_rad - 3 - tawaki_x_offset_pos;
 mid_x_offset = tawaki_x_offset_pos + tawaki_pin_space_length + mid_x_length/2 + 2*tawaki_ext_pin_rad+2;
 //mid_x_offset = tawaki_esc_space  - mid_x_length/2;
-mid_x_width = ct_width - 15;
+mid_x_width = ct_width - 25;//15;
 mid_rear_x_length = esc_pin_space_length - 3*esc_ext_pin_rad;
 mid_rear_x_offset = tawaki_esc_space + 2.5*esc_ext_pin_rad + mid_rear_x_length/2; //ct_length - main_stage_x_offset - esc_pin_space_length - rear_motor_square_support_attach_length - 3;
-mid_rear_x_width = ct_width - 15;
+mid_rear_x_width = ct_width - 25; //15;
 rear_x_length = ct_length- main_stage_x_offset - (tawaki_esc_space + 5*esc_ext_pin_rad + mid_rear_x_length) - front_offset;
 rear_x_offset = tawaki_esc_space + 5.5*esc_ext_pin_rad + mid_rear_x_length+ rear_x_length/2;
-rear_x_width = ct_width - 15;
+rear_x_width = ct_width - 40;//15;
+one_front_length = ct_length- front_offset - rear_x_length - mid_rear_x_length -7.5*esc_ext_pin_rad;
+one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
 
 
-        translate([0,center_part_y_offset,0]) {
-        //**** Rear Motor Attach ****//
-        rear_motor_attach();
+ 
 
-        difference(){ //Difference for battery holder   
+        if(rear_motor_mode == false) {
+
+
+            translate([0,center_part_y_offset,0]) {
+            //**** Rear Motor Attach ****//
+
+            difference(){ //Difference for battery holder   
+            
+            difference(){ //Difference for the grid   
+                main_stage_and_gravity_line(aero_grav_center);
+                grid_center_part();
+            
+            } // End Difference for the grid   
+             
+            void_battery_holder();
+            rear_motor_screw_removal();//Remove rear motor screw hole
+            }// End of Difference for battery holder 
+                       
+            //*** Tawaki ***//
+            tawaki_pin_support();
+            
+            //*** ESC ***//
+            esc_pin_support();
+
+            } // End of translate
         
-        difference(){ //Difference for the grid   
-            main_stage_and_gravity_line();
-            grid_center_part();
-        
-        } // End Difference for the grid   
-         
-        void_battery_holder();
-        }// End of Difference for battery holder 
-                   
-        //*** Tawaki ***//
-        tawaki_pin_support();
-        
-        //*** ESC ***//
-        esc_pin_support();
+        } //End if rear_motor_mode
 
-        } // End of translate
-
+        if(rear_motor_mode == true) {
+            translate([0,center_part_y_offset,0]) {
+                rear_motor();
+            } // End of translate
     
-
+        } //End if rear_motor_mode
+        
+        if(shape_only_mode == true) {
+            translate([0,center_part_y_offset,0]) {
+            
+                difference(){ //Difference for battery holder   
+                    main_stage_and_gravity_line(aero_grav_center);
+                    void_battery_holder();
+                }// End of Difference for battery holder 
+                
+            } // End of translate
+        } //End if shape_only_mode
+        
+        
  
    
   
  
-module main_stage_and_gravity_line(){
+module main_stage_and_gravity_line(aero_grav_center){
 
         union(){
         //Main stage support definition
@@ -204,18 +325,18 @@ module grid_center_part(){
     
     //Very Front part
     render(convexity=5) // Use for simplification for calculation
-    translate([very_front_x_offset,0,-center_width/2])
+    translate([one_front_offset,0,-center_width/2])
         rotate([90, 0, 0])
         difference() {
             // Principal part
-            cube([very_front_x_length, front_x_width, 2*center_height], center = true);
+            cube([one_front_length, front_x_width, 2*center_height], center = true);
 
             // Slot grid
             slot_grid();
         }
         
     //Front part under Tawaki
-    render(convexity=5) // Use for simplification for calculation
+  /*  render(convexity=5) // Use for simplification for calculation
     translate([front_x_offset,0,-center_width/2])
         rotate([90, 0, 0])
         difference() {
@@ -224,10 +345,10 @@ module grid_center_part(){
 
             // Slot grid
             slot_grid();
-        }
+        }*/
               
     //Mid part 
-    render(convexity=5) // Use for simplification for calculation
+ /*   render(convexity=5) // Use for simplification for calculation
     translate([mid_x_offset,0,-center_width/2])
     rotate([90, 0, 0])
         difference() {
@@ -236,7 +357,7 @@ module grid_center_part(){
 
             // Slot grid
             slot_grid();
-        }
+        }*/
         
      //Rear Mid part below ESC  
     render(convexity=5) // Use for simplification for calculation
@@ -361,32 +482,33 @@ module cyl_with_fillet(h, r, fillet_r) {
 module tawaki_pin_support(){
 
 //Tawaki pin support definition 1                
-    translate([tawaki_x_offset_pos + tawaki_ext_pin_rad,main_stage_y_width + tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
-        rotate([90,0,0])                    
+    //translate([tawaki_x_offset_pos + tawaki_ext_pin_rad,main_stage_y_width + tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
+    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height,-ct_width/2-tawaki_pin_space_width/2])
+        rotate([-90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }
     //Tawaki pin support definition 2                
-    translate([tawaki_x_offset_pos + tawaki_ext_pin_rad,main_stage_y_width + tawaki_pin_height,-ct_width/2+tawaki_pin_space_width/2])
-        rotate([90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height,-ct_width/2+tawaki_pin_space_width/2])
+        rotate([-90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }                
     //Tawaki pin support definition 3                
-    translate([tawaki_x_offset_pos + tawaki_ext_pin_rad + tawaki_pin_space_length,main_stage_y_width + tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
-        rotate([90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad + tawaki_pin_space_length+1,-ct_height,-ct_width/2-tawaki_pin_space_width/2])
+        rotate([-90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }                
     //Tawaki pin support definition 4                
-    translate([tawaki_x_offset_pos + tawaki_ext_pin_rad + tawaki_pin_space_length,main_stage_y_width + tawaki_pin_height,-ct_width/2+tawaki_pin_space_width/2])
-        rotate([90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad + tawaki_pin_space_length+1,-ct_height,-ct_width/2+tawaki_pin_space_width/2])
+        rotate([-90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
@@ -500,5 +622,136 @@ module rear_motor_attach(){
 }
 
 
- 
+
+module rear_motor(){
+
+    screw_position = 6.5;
+
+    
+    translate([ct_length -main_stage_x_offset,main_stage_y_width-center_height/2  ,-ct_width/2])
+
+        rotate([0,90,0])
+    difference(){
+        linear_extrude(rear_motor_square_support_attach_width)
+            offset(r=5)
+                offset(delta=-5)
+                    square([rear_motor_square_support_attach_length, rear_motor_square_support_attach_length], center=true);
+            
+        //rotate([45,0,0])    
+        linear_extrude(rear_motor_square_support_attach_width){
+        circle(r = rear_motor_int_circle_r); //hole for rear motor tree passage
+
+        translate([rear_motor_int_circ_attach_dist_to_ct,0,0]){//Hole for screwing the rear motor
+            translate([-rear_motor_int_circ_attach_r,0,0]) 
+            circle(r = rear_motor_int_circ_attach_r);     
+            translate([rear_motor_int_circ_attach_r,0,0]) 
+            circle(r = rear_motor_int_circ_attach_r);       
+            square([2*rear_motor_int_circ_attach_r, 2*rear_motor_int_circ_attach_r], center=true);
+        }     
+                   
+        translate([-rear_motor_int_circ_attach_dist_to_ct,0,0]){//Hole for screwing the rear motor
+            translate([-rear_motor_int_circ_attach_r,0,0]) 
+            circle(r = rear_motor_int_circ_attach_r);     
+            translate([rear_motor_int_circ_attach_r,0,0]) 
+            circle(r = rear_motor_int_circ_attach_r);       
+            square([2*rear_motor_int_circ_attach_r, 2*rear_motor_int_circ_attach_r], center=true);
+        }         
+         
+        translate([0,rear_motor_int_circ_attach_dist_to_ct,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([-rear_motor_int_circ_attach_r,0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);     
+                translate([rear_motor_int_circ_attach_r,0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);       
+                square([2*rear_motor_int_circ_attach_r, 2*rear_motor_int_circ_attach_r], center=true);
+            }
+        }   
+
+        translate([0,-rear_motor_int_circ_attach_dist_to_ct,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([-rear_motor_int_circ_attach_r,0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);     
+                translate([rear_motor_int_circ_attach_r,0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);       
+                square([2*rear_motor_int_circ_attach_r, 2*rear_motor_int_circ_attach_r], center=true);
+            }
+        }  
+        
+        
+        //Hole for screwing rear motor support to center part 
+                translate([-rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([-rear_motor_int_circ_attach_r,-0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);           
+            } 
+        } 
+                translate([-rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([rear_motor_int_circ_attach_r,-0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);           
+            } 
+        }         
+                translate([rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([-rear_motor_int_circ_attach_r,-0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);           
+            } 
+        } 
+                translate([rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([rear_motor_int_circ_attach_r,-0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);           
+            } 
+        }
+        }// End of Linear Extrude
+    } // End of difference
 }
+
+
+module rear_motor_screw_removal(){
+
+    screw_position = 6.5;
+    srew_hole_length = rear_motor_square_support_attach_width*2;
+
+    
+    translate([ct_length -main_stage_x_offset- srew_hole_length,main_stage_y_width-center_height/2  ,-ct_width/2])
+
+        rotate([0,90,0])
+        linear_extrude(rear_motor_square_support_attach_width*3){
+
+        
+        
+        //Hole for screwing rear motor support to center part 
+                translate([-rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([-rear_motor_int_circ_attach_r,-0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);           
+            } 
+        } 
+                translate([-rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([rear_motor_int_circ_attach_r,-0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);           
+            } 
+        }         
+                translate([rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([-rear_motor_int_circ_attach_r,-0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);           
+            } 
+        } 
+                translate([rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
+            rotate([0,0,90]){
+                translate([rear_motor_int_circ_attach_r,-0,0]) 
+                circle(r = rear_motor_int_circ_attach_r);           
+            } 
+        }
+        
+        }// End of Linear Extrude
+
+}
+
+
+}// End of Center part module
+ 
+

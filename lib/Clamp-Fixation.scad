@@ -188,7 +188,7 @@ module clamp_fixation_removal(wing_root_chord, wing_root, motor_arm_wdth, motor_
 module clamp_fixation_void(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_wg_hull)
 {
 
-    scale_up =1.3;
+    scale_up =1.5;
     y_bottom_scale = 1.1; //Parameter to increase depth of void to avoid collision with inside structure
     
     
@@ -200,7 +200,7 @@ module clamp_fixation_void(wing_root_chord, wing_root, motor_arm_wdth, motor_arm
     attach_y_bot = 13*y_bottom_scale;
     attach_x_bot = 10;
     
-    attach_y_bot_winglet = 7; //Dimension here is different due to the wingtip which is thiner
+    attach_y_bot_winglet = 10; //Dimension here is different due to the wingtip which is thiner
     
     // **** Motor Arm to Mid attach **** //
     x1_offset_perc = clamp_arm_mid_perc;

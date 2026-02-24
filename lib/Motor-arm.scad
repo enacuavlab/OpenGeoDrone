@@ -27,8 +27,11 @@ module CreateMotorArm(aero_grav_center){
     x_position_front_back = aero_grav_center[1] + motor_arm_grav_center_offset;
     magical_coeff = 0.4; // == 2*(1-0.8) where 0.8 is the z position of end of lock and the 2 times correspond the the mid maj axis
 
-
-motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
+    //Here is a vector from current center part position to origin
+    motor_arm_origin_offset = [motor_arm_length_front/2 + motor_arm_length_back/2 -motor_arm_x_pos - motor_arm_length_back, -motor_arm_y_offset, -wing_root_mm-ellipse_maj_ax];
+    
+    rotate_around_point(motor_arm_origin_offset, [0,0,pitch_trim]) //We trim the center part with the trim picth angle
+        motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
 
     //**************** Gravity Line Creation **********//
     if(Motor_arm_front || Motor_arm_full) { //We draw only on full and front arm
@@ -47,7 +50,8 @@ motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_leng
             hull(){//left side motor arm hull
             
                 intersection(){//We keep the motor arm in connection with wings only
-                    motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
+                    rotate_around_point(motor_arm_origin_offset, [0,0,pitch_trim]) //We trim the center part with the trim picth angle
+                        motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
                     if(Motor_arm_front){
                         translate([pt_le_leftside_bot[0],-2500,wing_root_mm + motor_arm_width-magical_coeff*ellipse_maj_ax])
                             cube([x_position_front_back-pt_le_leftside_bot[0],5000,5000]);
@@ -79,7 +83,8 @@ motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_leng
                 } //End of intersection
             
             }//End of hull
-            motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
+                rotate_around_point(motor_arm_origin_offset, [0,0,pitch_trim]) //We trim the center part with the trim picth angle
+                    motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
             
         }           
             
@@ -89,7 +94,8 @@ motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_leng
             hull(){//right side motor arm hull
             
                 intersection(){//We keep the motor arm in connection with wings only
-                    motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
+                    rotate_around_point(motor_arm_origin_offset, [0,0,pitch_trim]) //We trim the center part with the trim picth angle
+                        motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =Motor_arm_back, front = Motor_arm_front, full = Motor_arm_full);
                     if(Motor_arm_front){
                         translate([pt_le_rightside_top[0],-2500,wing_root_mm + magical_coeff*ellipse_maj_ax-5000])
                             cube([x_position_front_back-pt_le_rightside_top[0],5000,5000]);
@@ -121,7 +127,8 @@ motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_leng
                 } //End of intersection
             
             }//End of hull
-            motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
+            rotate_around_point(motor_arm_origin_offset, [0,0,pitch_trim]) //We trim the center part with the trim picth angle
+                motor_arm(ellipse_maj_ax, ellipse_min_ax, motor_arm_length_front, motor_arm_length_back, motor_arm_height, motor_arm_tilt_angle, motor_arm_screw_fit_offset, aero_grav_center, motor_arm_grav_center_offset, motor_arm_y_offset, back =false, front = false, full = true);
             
         }
        
@@ -465,6 +472,7 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
 
 
 }
+
 
 /*
 //Module to draw the attach between motor arm and wing

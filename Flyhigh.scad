@@ -40,22 +40,24 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// Inverse dilation wing to offset winglet => easier iteration : OK
-// winglet clamp : OK
-// fuselage : motor position and fuselage
+// rear motor : ok
+// fuselage : 
+//fit OK 
+//creux inside OK
+//attach + 
+//Aeration +
+//battery
+// Passage pitot
+
+// Clamp print parameter + fuselage and rear motor
+
 // Arm + center + fuselage => angle pitch comp
-// Technique clean Chat
-
-
-
-
-// Validation print :
-// V2 longerons transversale -> verif with true size and adapt longerons pos and length
-
+// Rear motor pitch or not ?
+// Pitot
 
 //Later :
+// Technique clean Chat
 // Clean too much param
-// Correction serrage spar main center more tight ?
 // Ailerons module clean
 // Try on Orca and add printer conf in git
 // Note on openscad nightly and manifold option
@@ -80,13 +82,15 @@ Right_side = false;
 Aileron_part = false;
 Root_part = false;
 Mid_part = false;
-Tip_part = true;
+Tip_part = false;
 Mid_Aileron_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
 Center_part = false;
+Rear_motor_part = false;
+Fuselage_part = true;
 Clamp_fixation = false;
 
 //**************** Quality settings **********//
@@ -104,7 +108,8 @@ wing_mode = 2; // 1=trapezoidal wing 2= elliptic wing
 center_airfoil_change_perc = 100; // Where you want to change to the center airfoil 100 is off
 tip_airfoil_change_perc = 100;    // Where you want to change to the tip airfoil 100 is off
 slice_transisions = 0; // This is the number of slices that will be a blend of airfoils when airfoil is changed 0 is off
-elliptic_param = 3.5; //Paramater for surrellipse adjustement. Ellipse = 2. Square tip >2 and Sharp tip <2
+elliptic_param = 3.5; //Parameter for surrellipse adjustement. Ellipse = 2. Square tip >2 and Sharp tip <2
+pitch_trim = 0; //Parameter for global pitch trim on motor arm, fuselage, center part in degree
 
 
 //**************** Motor arm **********//
@@ -141,6 +146,7 @@ center_width = 90; //55;
 center_length = 275;
 center_height = 15;
 center_part_y_offset = 1;
+main_stage_y_width = 2*center_height/3;
 main_stage_x_offset = center_length/10;
 //Battery holder void place
 battery_x_pos_6 = -5;
@@ -151,18 +157,20 @@ battery_x_pos_3 = 125;
 battery_x_pos_4 = 170;
 battery_x_pos_5 = 190;
 //Tawaki x offset on center part position
-tawaki_x_offset_pos = 60;
+tawaki_x_offset_pos = 100;
 //ESC x offset on center part position (from rear motor end)
-esc_x_offset_pos = 8;
+esc_x_offset_pos = 25;
 
 fuselage_x_offset = center_length/4;
 fuselage_z_offset = center_width/2;
-nozzle_length = 30;
-L_total = center_length - main_stage_x_offset+ fuselage_x_offset;//300;          // fuselage length
+nozzle_length = 35;
+tail_length = 30;
+L_total = center_length - main_stage_x_offset+ fuselage_x_offset - tail_length;//300;          // fuselage length
 D_front = center_width*0.6;           // noze diameter
-D_max   = center_width*0.7;           // max center diameter
-D_tail  = center_width*0.9;           // final diameter
-num       = 80;            // sections numbers (+ = smoother)
+D_max   = center_width*0.49;           // max center diameter
+D_tail  = center_width*0.8;           // final diameter
+num       = 100;            // sections numbers (+ = smoother)
+fuselage_ellipse_param = [7,4.8]; //Super ellipse fuselage shape parameter [x,y]
 //******//
 
 
@@ -733,24 +741,63 @@ module winglet_main(winglet_y_p) {
 //-----------------------------------------------------------
 module center_part_main(aero_grav_center, ct_width, ct_length, ct_height) {
 
+    ct_part_origin_offset = [main_stage_x_offset-center_length/2,center_height/2-center_part_y_offset-main_stage_y_width,center_width/2];//Here is a vector from current center part position to origin
+
     if(Center_part || Full_system){
-        difference() {
-            center_part(aero_grav_center, ct_width, ct_length, ct_height);
-            
-            union(){
-                center_spar_holes(ct_width);
-                clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
-                mirror([0, 0, 1])
-                    translate([0, 0, ct_width]) {
-                        center_spar_holes(ct_width);
-                        clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
-                     }
-            }
-            
-        }//End difference    
+        intersection(){
+            difference() {
+                rotate_around_point(ct_part_origin_offset, [0,0,pitch_trim]) //We trim the center part with the trim picth angle
+                    center_part(aero_grav_center, ct_width, ct_length, ct_height);
+                
+                union(){
+                    center_spar_holes(ct_width);
+                    clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                    mirror([0, 0, 1])
+                        translate([0, 0, ct_width]) {
+                            center_spar_holes(ct_width);
+                            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                         }
+                }
+                
+            }//End difference  
+            CreateFuselage(fuselage_ellipse_param); 
+        }//End Intersection
     }//End if
+    
+    if(Rear_motor_part || Full_system){
+        center_part(aero_grav_center, ct_width, ct_length, ct_height, rear_motor_mode = true);
+    }
+    
 }
 
+//-----------------------------------------------------------
+// MAIN CENTER PART MODULE
+//-----------------------------------------------------------
+module fuselage_main(aero_grav_center) {
+    
+    pt_to_origin = [ -L_total/2+ main_stage_x_offset+ fuselage_x_offset-tail_length,0,center_width/2];
+    //We do a difference to get an empty inside
+    //intersection(){
+    difference(){
+        CreateFuselage(fuselage_ellipse_param);
+        
+        render(convexity=5) // Use for simplification for calculation
+        translate(-pt_to_origin) 
+            scale(0.95) 
+                translate(pt_to_origin) 
+                    CreateFuselage(fuselage_ellipse_param);
+                    
+        render(convexity=5) // Use for simplification for calculation            
+            center_part(aero_grav_center, center_width, center_length, center_height, shape_only_mode = true);
+            
+        translate([-3,0,0])
+            center_part(aero_grav_center, center_width, center_length, center_height, rear_motor_mode = true);    
+    }
+    //translate([0,500,0])
+    //cube([1000,1000,1000], center=true);
+    //}
+
+}
 
 //-----------------------------------------------------------
 // SPAR VOIDS
@@ -809,6 +856,9 @@ else
 
     //**************** Center part **********//
     center_part_main(aero_grav_center, center_width, center_length, center_height);
+
+    //**************** Fuselage part **********//
+    if(Fuselage_part || Full_system) fuselage_main(aero_grav_center);  
     
     //**************** Servo horn **********//    
     if((Left_side && Servo_horn) || Full_system) servo_horn_main();
@@ -864,5 +914,4 @@ else
     
 } //End if main
 
-//CreateFuselage(); 
-//clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
+

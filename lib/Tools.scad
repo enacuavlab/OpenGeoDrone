@@ -124,3 +124,11 @@ module aerodynamic_gravity_center(wingspan, AC_CG_marg,  display_surface = false
             cube([ 1, 100, wingspan ]);
         }
 }
+
+
+module rotate_around_point(point, angles) {
+    translate(-point)
+        rotate(angles)
+            translate(point)
+                children();
+}
