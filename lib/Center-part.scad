@@ -1,6 +1,7 @@
 // TOP LEVEL Parameters
 rear_motor_square_support_attach_width = 4;
-rear_motor_square_support_attach_length = 28;
+rear_motor_square_support_attach_length_z = 34;
+rear_motor_square_support_attach_length_y = 28;
 
 // ------------------------
 // FUSELAGE GENERATOR
@@ -12,7 +13,6 @@ module CreateFuselage(fuse_ellipse_param) {
     //Main fuselage part
     translate([-fuselage_x_offset,0,-fuselage_z_offset])
         rotate([0,90,0]){
-            //bubble_bezier_fit_elliptic(length=nozzle_length, rx=s[0][1], ry=s[0][2]);
             bubble_bezier_fit_superellipse(length=nozzle_length, rx=s[0][1], ry=s[0][2], fuse_ellipse_param);
             for(i = [0 : len(s)-2]) {
                 hull() {
@@ -23,14 +23,108 @@ module CreateFuselage(fuse_ellipse_param) {
         }
         
         
+        
+        // *** HULL from the FUSELAGE to TAIL *** //
         //tail fuselage part, here we need to hull from the end of fuselage to tail of fuselage
         hull() {
             translate([-fuselage_x_offset,0,-fuselage_z_offset])
                 rotate([0,90,0])
                     frame(s[len(s)-1][0], s[len(s)-1][1], s[len(s)-1][2],fuse_ellipse_param);
             tail_fuselage();
+        }//End of hull FUSELAGE TO TAIL
+        
+        
+        
+        
+        // *** HULL from the FUSELAGE to WINGS LEFT PART *** //
+        hull() {
+            
+            union(){
+            //Main fuselage part
+            translate([-fuselage_x_offset,0,-fuselage_z_offset])
+                rotate([0,90,0]){
+                    for(i = [0 : len(s)-2]) {
+                        hull() {
+                            frame(s[i][0],   s[i][1], s[i][2],fuse_ellipse_param);
+                            frame(s[i+1][0], s[i+1][1], s[i+1][2],fuse_ellipse_param);
+                        }
+                    }
+                }
+        
+                //tail fuselage part, here we need to hull from the end of fuselage to tail of fuselage
+        hull() {
+            translate([-fuselage_x_offset,0,-fuselage_z_offset])
+                rotate([0,90,0])
+                    frame(s[len(s)-1][0], s[len(s)-1][1], s[len(s)-1][2],fuse_ellipse_param);
+            tail_fuselage();
         }//End of hull
+        }
+             intersection(){//We keep a wingshell slice 
+                    wing_shell();
+                    translate([-2*wing_root_chord_mm,-2500,0])
+                            cube([4*wing_root_chord_mm,5000,0.0001]);
+             }
 
+        }//End of hull FUSELAGE TO WINGS
+
+        // *** HULL from the FUSELAGE to WINGS RIGHT PART *** //        
+        mirror([0, 0, 1]) 
+            translate([0, 0, center_width]){
+            
+        hull() {
+            
+            union(){
+            //Main fuselage part
+            translate([-fuselage_x_offset,0,-fuselage_z_offset])
+                rotate([0,90,0]){
+                    for(i = [0 : len(s)-2]) {
+                        hull() {
+                            frame(s[i][0],   s[i][1], s[i][2],fuse_ellipse_param);
+                            frame(s[i+1][0], s[i+1][1], s[i+1][2],fuse_ellipse_param);
+                        }
+                    }
+                }
+        
+                //tail fuselage part, here we need to hull from the end of fuselage to tail of fuselage
+        hull() {
+            translate([-fuselage_x_offset,0,-fuselage_z_offset])
+                rotate([0,90,0])
+                    frame(s[len(s)-1][0], s[len(s)-1][1], s[len(s)-1][2],fuse_ellipse_param);
+            tail_fuselage();
+        }//End of hull
+        }
+             intersection(){//We keep a wingshell slice 
+                    wing_shell();
+                    translate([-2*wing_root_chord_mm,-2500,0])
+                            cube([4*wing_root_chord_mm,5000,0.0001]);
+             }
+
+        }//End of hull FUSELAGE TO WINGS
+            
+            
+            
+            
+            }//End of translate
+        
+}
+
+module tail_fuselage(){
+
+    hull_width = 0.00000001;
+    poly_size = rear_motor_square_support_attach_length_y/2; //Size of original rear motor support square
+    hexa_factor = 2.5; //extension on sides of the hexagon
+    polygon_points = [[poly_size, -poly_size], [-poly_size, -poly_size],[-hexa_factor*poly_size, -0], [-poly_size, poly_size],[poly_size, poly_size], [hexa_factor*poly_size, 0]]; // Points of polygon
+
+    translate([center_length -main_stage_x_offset,main_stage_y_width-center_height/2 +center_part_y_offset ,-center_width/2]) {
+        rotate([0,90,0]) {
+        
+            linear_extrude(h=hull_width)
+                offset(r=6)
+                    offset(delta=-6)
+                        polygon(points=polygon_points);
+                
+        }//End of rotate
+    }//End of translate
 }
 
 
@@ -41,13 +135,20 @@ function fuselage_sections() =
             z = t * L_total,                      // position on length
             // Shape law: "water drop"
             // rapid rise -> plateau -> slow descent
-            k = sin(t*180),                       // smooth aerodynamic shape
-            D = D_front*(1-t) + D_max*k*(1-t/1.2) + D_tail*t  // tapered interpolation
+            //k = sin(t*180),                       // smooth aerodynamic shape
+            //D = D_front*(1-t) + D_max*k*(1-t/1.2) + D_tail*t  // tapered interpolation
+            D = bezier1D(t,
+             D_front,
+             D_front + 0.6*D_max,
+             D_tail + 0.6*D_max,
+             D_tail)
         )
-        [z, D/2, D*0.75/2]                        // rx, ry elliptical axes
+        [z, D/2, D*0.75/2 * fuselage_scale_y]                        // rx, ry elliptical axes
     ];
 
 
+
+    
 // frame super-ellipse generalised / anisotrope (rounded rectangle)
 module frame(z, rx, ry, n = [4,4]){
 
@@ -71,33 +172,13 @@ module frame(z, rx, ry, n = [4,4]){
 }
 
 
-module bubble_bezier_fit_elliptic(length, rx, ry) {
-    // rx = X semi-axis of the first fuselage section
-    // ry = Y semi-axis of the first fuselage section
 
-    // 2D normalized profile (radius = 1)
-    P0 = [0,1];                   // start of the connection
-    P1 = [-0.3, 1.02];            // slightly wider bubble just after the start
-    P2 = [-0.8, 0.3];             // gradual tapering
-    P3 = [-1, 0];                  // nose tip
-
-    // Cubic Bézier function
-    function bezier(t,p0,p1,p2,p3) = 
-        (1-t)*(1-t)*(1-t)*p0 +
-        3*(1-t)*(1-t)*t*p1 +
-        3*(1-t)*t*t*p2 +
-        t*t*t*p3;
-
-    // Sample the Bézier curve from t=0 to t=1
-    profile = [for(t=[0:0.01:1]) bezier(t,P0,P1,P2,P3)];
-
-    // Scale the profile to match the ellipse axes of the fuselage
-    translate([0,0,-0.01])   // slight offset to avoid z-fighting
-    scale([rx, ry, length])
-        rotate([0,180,0])
-            rotate_extrude($fn=160)
-                polygon(profile);
-}
+function bezier1D(t,p0,p1,p2,p3) =
+    (1-t)*(1-t)*(1-t)*p0 +
+    3*(1-t)*(1-t)*t*p1 +
+    3*(1-t)*t*t*p2 +
+    t*t*t*p3;
+    
 
 
 module bubble_bezier_fit_superellipse(length, rx, ry, n = [4,4]){
@@ -147,24 +228,7 @@ module bubble_bezier_fit_superellipse(length, rx, ry, n = [4,4]){
     }
 }
 
-module tail_fuselage(){
 
-    hull_width = 0.00000001;
-    poly_size = rear_motor_square_support_attach_length/2; //Size of original rear motor support square
-    hexa_factor = 2.5; //extension on sides of the hexagon
-    polygon_points = [[poly_size, -poly_size], [-poly_size, -poly_size],[-hexa_factor*poly_size, -0], [-poly_size, poly_size],[poly_size, poly_size], [hexa_factor*poly_size, 0]]; // Points of polygon
-
-    translate([center_length -main_stage_x_offset,main_stage_y_width-center_height/2 +center_part_y_offset ,-center_width/2]) {
-        rotate([0,90,0]) {
-        
-            linear_extrude(h=hull_width)
-                offset(r=6)
-                    offset(delta=-6)
-                        polygon(points=polygon_points);
-                
-        }//End of rotate
-    }//End of translate
-}
 
 // ------------------------
 // CENTER PART
@@ -208,9 +272,9 @@ rear_motor_int_circle_r = 4.75;
 rear_motor_int_circ_attach_r = 1.5;
 rear_motor_int_circ_attach_dist_to_ct = 8 + rear_motor_int_circ_attach_r;
 rear_motor_screw_hole = 1.25;
-y_offset_rear_motor = rear_motor_square_support_attach_length/2 + ct_height/2;
+y_offset_rear_motor = rear_motor_square_support_attach_length_y/2 + ct_height/2;
 
-tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad  - esc_x_offset_pos; //- rear_motor_square_support_attach_length
+tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad  - esc_x_offset_pos;
 
 main_part_rear_spar_screw_radius = 1.13;
 
@@ -234,7 +298,7 @@ mid_x_offset = tawaki_x_offset_pos + tawaki_pin_space_length + mid_x_length/2 + 
 //mid_x_offset = tawaki_esc_space  - mid_x_length/2;
 mid_x_width = ct_width - 25;//15;
 mid_rear_x_length = esc_pin_space_length - 3*esc_ext_pin_rad;
-mid_rear_x_offset = tawaki_esc_space + 2.5*esc_ext_pin_rad + mid_rear_x_length/2; //ct_length - main_stage_x_offset - esc_pin_space_length - rear_motor_square_support_attach_length - 3;
+mid_rear_x_offset = tawaki_esc_space + 2.5*esc_ext_pin_rad + mid_rear_x_length/2; 
 mid_rear_x_width = ct_width - 25; //15;
 rear_x_length = ct_length- main_stage_x_offset - (tawaki_esc_space + 5*esc_ext_pin_rad + mid_rear_x_length) - front_offset;
 rear_x_offset = tawaki_esc_space + 5.5*esc_ext_pin_rad + mid_rear_x_length+ rear_x_length/2;
@@ -555,10 +619,10 @@ module esc_pin_support(){
 
 }
 
-
+/*
 module rear_motor_attach(){
 
-    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width - y_offset_rear_motor,-ct_width/2+ rear_motor_square_support_attach_length/2])
+    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width - y_offset_rear_motor,-ct_width/2+ rear_motor_square_support_attach_length_z/2])
         rotate([0,180,0])
         linear_extrude(height = rear_motor_square_support_attach_width)
         polygon(points=[[0, 0], [0, rear_motor_square_support_attach_length], [rear_motor_square_support_attach_length, 0]]);
@@ -620,12 +684,13 @@ module rear_motor_attach(){
         }// End of Linear Extrude
     } // End of difference
 }
-
+*/
 
 
 module rear_motor(){
 
     screw_position = 6.5;
+    z_screw_position_offset = 5.5;
 
     
     translate([ct_length -main_stage_x_offset,main_stage_y_width-center_height/2  ,-ct_width/2])
@@ -635,7 +700,7 @@ module rear_motor(){
         linear_extrude(rear_motor_square_support_attach_width)
             offset(r=5)
                 offset(delta=-5)
-                    square([rear_motor_square_support_attach_length, rear_motor_square_support_attach_length], center=true);
+                    square([rear_motor_square_support_attach_length_z, rear_motor_square_support_attach_length_y], center=true);
             
         //rotate([45,0,0])    
         linear_extrude(rear_motor_square_support_attach_width){
@@ -679,25 +744,25 @@ module rear_motor(){
         
         
         //Hole for screwing rear motor support to center part 
-                translate([-rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
+                translate([-z_screw_position_offset-rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([-rear_motor_int_circ_attach_r,-0,0]) 
                 circle(r = rear_motor_int_circ_attach_r);           
             } 
         } 
-                translate([-rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
+                translate([-z_screw_position_offset-rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([rear_motor_int_circ_attach_r,-0,0]) 
                 circle(r = rear_motor_int_circ_attach_r);           
             } 
         }         
-                translate([rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
+                translate([z_screw_position_offset+rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([-rear_motor_int_circ_attach_r,-0,0]) 
                 circle(r = rear_motor_int_circ_attach_r);           
             } 
         } 
-                translate([rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
+                translate([z_screw_position_offset+rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([rear_motor_int_circ_attach_r,-0,0]) 
                 circle(r = rear_motor_int_circ_attach_r);           
@@ -712,6 +777,7 @@ module rear_motor_screw_removal(){
 
     screw_position = 6.5;
     srew_hole_length = rear_motor_square_support_attach_width*2;
+    z_screw_position_offset = 5.5;
 
     
     translate([ct_length -main_stage_x_offset- srew_hole_length,main_stage_y_width-center_height/2  ,-ct_width/2])
@@ -722,25 +788,25 @@ module rear_motor_screw_removal(){
         
         
         //Hole for screwing rear motor support to center part 
-                translate([-rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
+                translate([-z_screw_position_offset-rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([-rear_motor_int_circ_attach_r,-0,0]) 
                 circle(r = rear_motor_int_circ_attach_r);           
             } 
         } 
-                translate([-rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
+                translate([-z_screw_position_offset-rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([rear_motor_int_circ_attach_r,-0,0]) 
                 circle(r = rear_motor_int_circ_attach_r);           
             } 
         }         
-                translate([rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
+                translate([z_screw_position_offset+rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([-rear_motor_int_circ_attach_r,-0,0]) 
                 circle(r = rear_motor_int_circ_attach_r);           
             } 
         } 
-                translate([rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
+                translate([z_screw_position_offset+rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([rear_motor_int_circ_attach_r,-0,0]) 
                 circle(r = rear_motor_int_circ_attach_r);           
@@ -755,3 +821,199 @@ module rear_motor_screw_removal(){
 }// End of Center part module
  
 
+//bubble_bezier_fit_elliptic(length=nozzle_length, rx=s[0][1], ry=s[0][2]);
+/*    
+module bubble_bezier_fit_elliptic(length, rx, ry) {
+    // rx = X semi-axis of the first fuselage section
+    // ry = Y semi-axis of the first fuselage section
+
+    // 2D normalized profile (radius = 1)
+    P0 = [0,1];                   // start of the connection
+    P1 = [-0.3, 1.02];            // slightly wider bubble just after the start
+    P2 = [-0.8, 0.3];             // gradual tapering
+    P3 = [-1, 0];                  // nose tip
+
+    // Cubic Bézier function
+    function bezier(t,p0,p1,p2,p3) = 
+        (1-t)*(1-t)*(1-t)*p0 +
+        3*(1-t)*(1-t)*t*p1 +
+        3*(1-t)*t*t*p2 +
+        t*t*t*p3;
+
+    // Sample the Bézier curve from t=0 to t=1
+    profile = [for(t=[0:0.01:1]) bezier(t,P0,P1,P2,P3)];
+
+    // Scale the profile to match the ellipse axes of the fuselage
+    translate([0,0,-0.01])   // slight offset to avoid z-fighting
+    scale([rx, ry, length])
+        rotate([0,180,0])
+            rotate_extrude($fn=160)
+                polygon(profile);
+}
+*/
+ 
+                    /*frame(s[i][0],   s[i][1], s[i][2], s[i][3]);
+                    frame(s[i+1][0], s[i+1][1], s[i+1][2], s[i+1][3]);*/ 
+/*
+poly_size = rear_motor_square_support_attach_length_y/2; // taille du carré de base
+hexa_factor = 2.5;                                        // extensions pour hexagone
+hex_points = [[poly_size, -poly_size],
+              [-poly_size, -poly_size],
+              [-hexa_factor*poly_size, 0],
+              [-poly_size, poly_size],
+              [poly_size, poly_size],
+              [hexa_factor*poly_size, 0]]; // points de ton hexagone
+*/
+ 
+ 
+
+/*
+rx_tail = rear_motor_square_support_attach_length_z/2;
+ry_tail = rear_motor_square_support_attach_length_y/2;
+L_total_full = L_total + tail_length;
+tail_steps = 20;*/
+/*
+function fuselage_sections() =
+[
+    for(i = [0:num])
+        let(
+            t = i/num,
+            z = t * L_total,
+
+            // Bézier 1D pour diamètre
+            D = bezier1D(t,
+                         D_front,
+                         D_front + 0.6*D_max,
+                         D_tail,
+                         D_tail)
+        )
+        [z, D/2, D*0.75/2 * fuselage_scale_y],
+
+    // -------- Transition vers tail --------
+
+    for(i = [1:tail_steps])
+        let(
+            t = i/tail_steps,
+            z = L_total + t*tail_length,
+
+            rx = bezier1D(t,
+                          D_tail/2,
+                          D_tail/2,
+                          rx_tail,
+                          rx_tail),
+
+            ry = bezier1D(t,
+                          D_tail*0.75/2 *fuselage_scale_y,
+                          D_tail*0.75/2 *fuselage_scale_y,
+                          ry_tail,
+                          ry_tail)
+        )
+        [z, rx, ry]
+];
+*/
+
+//n_fuse = fuselage_ellipse_param;   // ex: [4,4]
+//n_tail = [40,40];              // approx hexagone
+/*
+function fuselage_sections() =
+[
+    // ----- FUSELAGE -----
+    for(i = [0:num])
+        let(
+            t = i/num,
+            z = t * L_total,
+
+            D = bezier1D(t,
+                         D_front,
+                         D_front + 0.6*D_max,
+                         D_tail,
+                         D_tail),
+
+            n_interp = n_fuse
+        )
+        [z, D/2, D*0.75/2 * fuselage_scale_y, n_interp],
+
+    // ----- TRANSITION VERS HEX -----
+    for(i = [1:tail_steps])
+        let(
+            t = i/tail_steps,
+            z = L_total + t*tail_length,
+
+            rx = bezier1D(t,
+                          D_tail/2,
+                          D_tail/2,
+                          rx_tail,
+                          rx_tail),
+
+            ry = bezier1D(t,
+                          D_tail*0.75/2 * fuselage_scale_y,
+                          D_tail*0.75/2 * fuselage_scale_y,
+                          ry_tail,
+                          ry_tail),
+
+            n_interp = [
+                bezier1D(t, n_fuse[0], n_fuse[0], n_tail[0], n_tail[0]),
+                bezier1D(t, n_fuse[1], n_fuse[1], n_tail[1], n_tail[1])
+            ]
+        )
+        [z, rx, ry, n_interp]
+];*/
+/*
+function fuselage_sections() =
+[
+    // ----- FUSELAGE -----
+    for(i=[0:num])
+        let(
+            t = i/num,
+            z = t*L_total,
+            D = bezier1D(t,D_front,D_front+0.6*D_max,D_tail,D_tail),
+            n_interp = fuse_ellipse_param,
+            shape = "super"
+        )
+        [z, D/2, D*0.75/2*fuselage_scale_y, n_interp, shape],
+
+    // ----- TRANSITION VERS HEX CUSTOM -----
+    for(i=[1:tail_steps])
+        let(
+            t = i/tail_steps,
+            z = L_total + t*tail_length,
+            rx = bezier1D(t,D_tail/2,D_tail/2,rx_tail,rx_tail),
+            ry = bezier1D(t,D_tail*0.75/2*fuselage_scale_y,D_tail*0.75/2*fuselage_scale_y,ry_tail,ry_tail),
+            n_interp = [bezier1D(t,fuse_ellipse_param[0],fuse_ellipse_param[0],20,20),
+                        bezier1D(t,fuse_ellipse_param[1],fuse_ellipse_param[1],20,20)],
+            shape = t < 0.5 ? "super" : "hex"
+        )
+        [z, rx, ry, n_interp, shape]
+];
+*/ 
+
+
+
+
+/*
+module frame(z, rx, ry, n=[4,4], shape="super") {
+    hull_width = 0.00000001;
+    steps = 100;
+
+    translate([0,0,z])
+        linear_extrude(h=hull_width, center=false)
+            if(shape=="super") {
+                polygon(points=[
+                    for(i=[0:steps-1])
+                        let(
+                            a = 360*i/steps,
+                            ca = cos(a),
+                            sa = sin(a),
+                            x = rx*sign(ca)*pow(abs(ca),2/n[0]),
+                            y = ry*sign(sa)*pow(abs(sa),2/n[1])
+                        )
+                        [x,y]
+                ]);
+                }
+            if(shape=="hex") {
+                polygon(points=[
+                    for(p=[for(pt = hex_points) pt])
+                        [p[0]*rx/poly_size, p[1]*ry/poly_size] // <--- Scale correct
+                ]);}
+}
+*/

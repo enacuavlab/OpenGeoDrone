@@ -42,11 +42,15 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 // TODO
 // rear motor : ok
 // fuselage : 
-//fit OK 
-//creux inside OK
-//attach + 
-//Aeration +
-//battery
+// fit OK 
+// creux inside OK
+// battery OK 155 43 31
+// Redo motor OK
+// tangeante rear OK
+// Hull to wing OK
+// Aeration
+// Passage cable clamp etc
+// attach 
 // Passage pitot
 
 // Clamp print parameter + fuselage and rear motor
@@ -88,7 +92,7 @@ Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
-Center_part = false;
+Center_part = true;
 Rear_motor_part = false;
 Fuselage_part = true;
 Clamp_fixation = false;
@@ -145,7 +149,7 @@ gravity_center_plot = false; //Green
 center_width = 90; //55;
 center_length = 275;
 center_height = 15;
-center_part_y_offset = 1;
+center_part_y_offset = 0;//1;
 main_stage_y_width = 2*center_height/3;
 main_stage_x_offset = center_length/10;
 //Battery holder void place
@@ -164,13 +168,14 @@ esc_x_offset_pos = 25;
 fuselage_x_offset = center_length/4;
 fuselage_z_offset = center_width/2;
 nozzle_length = 35;
-tail_length = 30;
+tail_length = 45;
 L_total = center_length - main_stage_x_offset+ fuselage_x_offset - tail_length;//300;          // fuselage length
 D_front = center_width*0.6;           // noze diameter
-D_max   = center_width*0.49;           // max center diameter
+D_max   = center_width*0.6;           // max center diameter
 D_tail  = center_width*0.8;           // final diameter
 num       = 100;            // sections numbers (+ = smoother)
 fuselage_ellipse_param = [7,4.8]; //Super ellipse fuselage shape parameter [x,y]
+fuselage_scale_y = 1.25;
 //******//
 
 
@@ -783,15 +788,18 @@ module fuselage_main(aero_grav_center) {
         
         render(convexity=5) // Use for simplification for calculation
         translate(-pt_to_origin) 
-            scale(0.95) 
+            scale(0.99) 
                 translate(pt_to_origin) 
                     CreateFuselage(fuselage_ellipse_param);
                     
         render(convexity=5) // Use for simplification for calculation            
             center_part(aero_grav_center, center_width, center_length, center_height, shape_only_mode = true);
             
-        translate([-3,0,0])
-            center_part(aero_grav_center, center_width, center_length, center_height, rear_motor_mode = true);    
+        //translate([-3,0,0])
+        //    center_part(aero_grav_center, center_width, center_length, center_height, rear_motor_mode = true);   
+           
+        //We remove the tail fuselage used to hull as well
+        tail_fuselage();   
     }
     //translate([0,500,0])
     //cube([1000,1000,1000], center=true);
