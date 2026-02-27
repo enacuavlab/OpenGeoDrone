@@ -40,19 +40,8 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// rear motor : ok
-// fuselage : 
-// fit OK 
-// creux inside OK
-// battery OK 155 43 31
-// Redo motor OK
-// tangeante rear OK
-// Hull to wing OK
-// Aeration OK
-// Passage cable clamp etc OK
-// remove layer hull CLEAN and speed up : OK
-// clamp issue + cable passage to ctpart : OK
-// attach bottom
+// attach bottom : To be tested
+// transition back to front
 // attach top
 // Passage pitot
 // Hole rear motor aeration
@@ -96,7 +85,7 @@ Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
-Center_part = true;
+Center_part = false;
 Rear_motor_part = false;
 Clamp_fixation = false;
 Fuselage_front_part = false;
@@ -904,7 +893,7 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 cube([1000,1000,1000], center=true);                
 
         if(Fuselage_upper_back_part)   
-            translate([500+x1_fuselage_screw,500,0])
+            translate([500+x1_fuselage_screw-3,500,0])
                 cube([1000,1000,1000], center=true);  
                 
     }//End of 1st intersection
@@ -1032,6 +1021,51 @@ else
 
 } //End if main
 
+//TODO : 
+// 1 change th origin to get in the middle of the overlap
+// Incorpore this into fuselage
+// do the same for other overlap
+
+    pt_to_origin = [ -L_total/2+ main_stage_x_offset+ fuselage_x_offset-tail_length,0,center_width/2];
+
+    
+      //  difference(){
+ 
+   /*     difference(){
+            fuselage_front_transition();
+            
+                translate(-pt_to_origin) 
+                    scale(0.95) */
+                        translate(pt_to_origin) 
+                            fuselage_front_transition();
+        //      }    
+              
+      /*  difference(){
+            fuselage_front_transition();
+            
+                translate(-pt_to_origin) 
+                    scale(0.98) 
+                        translate(pt_to_origin) 
+                            fuselage_front_transition();
+              } */             
+                            
+         //}
+    
 
 
+//fuselage_front_transition() ;
 
+
+module fuselage_front_transition(overlap_length = 30) {
+
+    intersection(){
+
+        render() // Use for simplification for calculation
+            CreateFuselage(fuselage_ellipse_param);
+        
+
+            translate([-0+x1_fuselage_screw,500,0])
+                cube([overlap_length,1000,1000], center=true);
+                
+    }
+}
