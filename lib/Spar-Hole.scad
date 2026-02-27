@@ -130,15 +130,66 @@ module root_cables_hole(cable_hole_width, cable_hole_perc, cable_hole_ellipse, c
                         circle(r = cable_hole_width, $fn = 100);        
 
          //Hole for cable passage from wing to main stage
-        color("orange") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, cable_hole_offset, 0 ])
+      /*  color("orange") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, cable_hole_offset, 0 ])
             rotate([ rotation_cable_passage, 0, 0 ]) // rotation to intrados or extrados 
                 linear_extrude(height = wingmm)    
                     scale([1, cable_hole_ellipse/cable_hole_width])
-                        circle(r = cable_hole_width, $fn = 100);                          
+                        circle(r = cable_hole_width, $fn = 100);    */                      
       }
         translate([-1000, -1000, 0])
             cube([2000, 2000, wing_rootmm - motorarm_to_winghull]);
     }
+    
+    
+   
+    
+}
+
+//Create hole in fuselage adn center part for cable passage
+module fuselage_ct_part_cables_hole(cable_hole_width, cable_hole_perc, cable_hole_ellipse, cable_hole_offset, slice_gap, sweep_ang, cable_passage_arm_perc, cable_passage_main_perc, wingmm, wing_rootmm, motorarm_to_winghull, wing_root_chordmm) {
+
+    offset_bottom_z = -30;
+    z_offset_to_ct_part = -8;
+    x_offset_to_ct_part = z_offset_to_ct_part*tan(sweep_ang);
+
+    root_cables_hole_flip_side = false;
+    //Here we rotate of 180 deg if requested to flip to other side
+    flip_side = root_cables_hole_flip_side ? 180 : 0;
+    //the blue cube should be connect to the red one. As we do a rotation, we correct an offset
+    blue_cube_offset = root_cables_hole_flip_side ? 5 : 5;
+    rotation_cable_passage = root_cables_hole_flip_side ? 90 : -90;
+    
+    intersection() {
+    
+    union() {
+        color("orange") translate([ cable_hole_perc / 100 * wing_root_chordmm, cable_hole_offset, offset_bottom_z])
+            rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep    
+                linear_extrude(height = wingmm)    
+                    scale([1, cable_hole_ellipse/cable_hole_width])
+                        circle(r = cable_hole_width, $fn = 100);
+                                                  
+
+         //Hole for cable passage from wing to main stage
+        color("orange") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm+x_offset_to_ct_part, cable_hole_offset, z_offset_to_ct_part ])
+            rotate([ rotation_cable_passage, 0, 0 ]) // rotation to intrados or extrados 
+                linear_extrude(height = center_height)    
+                    scale([1, cable_hole_ellipse/cable_hole_width])
+                        circle(r = cable_hole_width, $fn = 100);       
+     
+     
+         //Hole to make room for fuselage
+        color("blue") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, -1, 0 ])
+            rotate([ rotation_cable_passage, 0, 0 ]) // rotation to intrados or extrados 
+                linear_extrude(height = cable_hole_offset+1)    
+                    scale([1, cable_hole_ellipse/cable_hole_width])
+                        circle(r = cable_hole_width, $fn = 100);  
+                        
+      }
+        translate([-1000, -1000, z_offset_to_ct_part-cable_hole_ellipse])
+            cube([2000, 2000, wing_rootmm - motorarm_to_winghull]);
+    }
+    
+    
     
     
    
@@ -182,11 +233,11 @@ module root_cables_void(cable_hole_width, cable_hole_perc, cable_hole_ellipse, c
                         circle(r = cable_hole_width * void_offset, $fn = 100);   
  
          //Hole for cable passage from wing to main stage
-        color("orange") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, cable_hole_offset,0 ])
+      /*  color("orange") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, cable_hole_offset,0 ])
             rotate([ rotation_cable_passage, 0, 0 ]) //Spar angle rotation to follow the sweep    
                 linear_extrude(height = wingmm)    
                     scale([1, cable_hole_ellipse/cable_hole_width])
-                        circle(r = cable_hole_width * void_offset, $fn = 100);  
+                        circle(r = cable_hole_width * void_offset, $fn = 100);  */
          }
         
         cube_cut(0, wing_rootmm - motorarm_to_winghull);

@@ -48,12 +48,16 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 // Redo motor OK
 // tangeante rear OK
 // Hull to wing OK
-// Aeration
-// Passage cable clamp etc
-// attach 
+// Aeration OK
+// Passage cable clamp etc OK
+// remove layer hull CLEAN and speed up : OK
+// clamp issue + cable passage to ctpart : OK
+// attach bottom
+// attach top
 // Passage pitot
+// Hole rear motor aeration
 
-// Clamp print parameter + fuselage and rear motor
+// Clamp print parameter genera + parama + fuselage and rear motor
 
 // Arm + center + fuselage => angle pitch comp
 // Rear motor pitch or not ?
@@ -94,14 +98,25 @@ Motor_arm_back = false;
 Servo_horn = false;
 Center_part = true;
 Rear_motor_part = false;
-Fuselage_part = true;
 Clamp_fixation = false;
+Fuselage_front_part = false;
+Fuselage_bottom_back_part = false;
+Fuselage_upper_back_part = true;
 
 //**************** Quality settings **********//
 draft_quality = false;
-$fa = draft_quality?1:5; //Maximum angle between two segments. → Smaller = more segments = smoother.
-$fs = draft_quality?0.1:1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
+$fn = $preview ? 0.05 : 80;
+$fa = $preview ?  0.1 :  5;
+$fs = $preview ? 0.05 :  1;
+//$fa = draft_quality?1:5; //Maximum angle between two segments. → Smaller = more segments = smoother.
+//$fs = draft_quality?0.1:1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
 wing_sections = draft_quality?5:30; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
+
+
+ 
+echo(str("fn = ",$fn));
+echo(str("fa = ",$fa));
+echo(str("fs = ",$fs));
 
 //****************Wing Airfoil settings**********//
 wing_mm = 500;            // wing length in mm (= Half the wingspan)
@@ -152,10 +167,11 @@ center_height = 15;
 center_part_y_offset = 0;//1;
 main_stage_y_width = 2*center_height/3;
 main_stage_x_offset = center_length/10;
+battery_width = center_width -20;//-10; // Distance of battery holder void from extremity
 //Battery holder void place
 battery_x_pos_6 = -5;
 battery_x_pos_1 = 35;
-battery_x_pos_7 = 85;
+battery_x_pos_7 = 99;
 battery_x_pos_2 = 100;
 battery_x_pos_3 = 125;
 battery_x_pos_4 = 170;
@@ -165,17 +181,28 @@ tawaki_x_offset_pos = 100;
 //ESC x offset on center part position (from rear motor end)
 esc_x_offset_pos = 25;
 
+
 fuselage_x_offset = center_length/4;
 fuselage_z_offset = center_width/2;
 nozzle_length = 35;
 tail_length = 45;
 L_total = center_length - main_stage_x_offset+ fuselage_x_offset - tail_length;//300;          // fuselage length
+fuselage_mid_cut =L_total / 2 - fuselage_x_offset; //Plan used to cut the fuselage in two
+
 D_front = center_width*0.6;           // noze diameter
 D_max   = center_width*0.6;           // max center diameter
 D_tail  = center_width*0.8;           // final diameter
 num       = 100;            // sections numbers (+ = smoother)
 fuselage_ellipse_param = [7,4.8]; //Super ellipse fuselage shape parameter [x,y]
 fuselage_scale_y = 1.25;
+aeration_width = 10;
+aeration_length = 20;
+//Fuselage screws position
+x1_fuselage_screw = -15;
+z1_fuselage_screw = -4;
+x2_fuselage_screw = 23;
+x3_fuselage_screw = 84;
+x4_fuselage_screw = 165;
 //******//
 
 
@@ -398,7 +425,7 @@ debug_clamp_fixation_void = false;
 //Settings for x axis adjustement in root choord percentage
 clamp_arm_mid_perc = 100;
 clamp_arm_root_perc = 106;
-clamp_root_center_perc = 43;
+clamp_root_center_perc = 42;
 clamp_mid_winglet_perc = 163;
 //Settings for y axis adjustement in on y axis in mm
 clamp_arm_mid_y_offset = 12;
@@ -757,13 +784,17 @@ module center_part_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 union(){
                     center_spar_holes(ct_width);
                     clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                    fuselage_ct_part_cables_hole(root_cable_hole_width, root_cable_hole_perc, root_cable_hole_ellipse, root_cable_hole_offset, slice_gap_width, sweep_angle, root_cable_passage_arm_perc, root_cable_passage_main_perc, wing_mm, wing_root_mm, motor_arm_to_wing_hull, wing_root_chord_mm);
                     mirror([0, 0, 1])
                         translate([0, 0, ct_width]) {
                             center_spar_holes(ct_width);
                             clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                            fuselage_ct_part_cables_hole(root_cable_hole_width, root_cable_hole_perc, root_cable_hole_ellipse, root_cable_hole_offset, slice_gap_width, sweep_angle, root_cable_passage_arm_perc, root_cable_passage_main_perc, wing_mm, wing_root_mm, motor_arm_to_wing_hull, wing_root_chord_mm);
                          }
                 }
                 
+            //we remove the screws for attaching bottom fuselage
+            all_fuselage_screws(screw_clearance_hole = true);      
             }//End difference  
             CreateFuselage(fuselage_ellipse_param); 
         }//End Intersection
@@ -776,34 +807,110 @@ module center_part_main(aero_grav_center, ct_width, ct_length, ct_height) {
 }
 
 //-----------------------------------------------------------
-// MAIN CENTER PART MODULE
+// FUSELAGE PART MODULE
 //-----------------------------------------------------------
-module fuselage_main(aero_grav_center) {
+module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
     
-    pt_to_origin = [ -L_total/2+ main_stage_x_offset+ fuselage_x_offset-tail_length,0,center_width/2];
+    pt_to_origin = [ -L_total/2+ main_stage_x_offset+ fuselage_x_offset-tail_length,0,ct_width/2];
+
     //We do a difference to get an empty inside
-    //intersection(){
-    difference(){
-        CreateFuselage(fuselage_ellipse_param);
+    intersection(){
+    
+        union() {
         
-        render(convexity=5) // Use for simplification for calculation
-        translate(-pt_to_origin) 
-            scale(0.99) 
-                translate(pt_to_origin) 
-                    CreateFuselage(fuselage_ellipse_param);
-                    
-        render(convexity=5) // Use for simplification for calculation            
-            center_part(aero_grav_center, center_width, center_length, center_height, shape_only_mode = true);
+        difference(){
+            render() // Use for simplification for calculation
+                CreateFuselage(fuselage_ellipse_param);
             
-        //translate([-3,0,0])
-        //    center_part(aero_grav_center, center_width, center_length, center_height, rear_motor_mode = true);   
-           
-        //We remove the tail fuselage used to hull as well
-        tail_fuselage();   
-    }
-    //translate([0,500,0])
-    //cube([1000,1000,1000], center=true);
-    //}
+            render() // Use for simplification for calculation
+                translate(-pt_to_origin) 
+                    scale(0.98) 
+                        translate(pt_to_origin) 
+                            CreateFuselage(fuselage_ellipse_param);
+                        
+            render() // Use for simplification for calculation            
+                center_part(aero_grav_center, ct_width, ct_length, ct_height, shape_only_mode = true);
+               
+            //We remove the tail fuselage used to hull as well
+            render() // Use for simplification for calculation
+                tail_fuselage();
+            
+            //We Draw holes for aeration
+            translate([0,0,-3.5*ct_width/5])
+                aeration_fuselage();
+                
+            translate([0,0,-1.5*ct_width/5])
+                aeration_fuselage();   
+       
+            translate([3*ct_length/4,0,-3.5*ct_width/5])
+                    aeration_fuselage(flip=true);
+                
+            translate([3*ct_length/4,0,-1.5*ct_width/5])
+                    aeration_fuselage(flip=true); 
+                
+            render()
+                union(){
+                    center_spar_holes(ct_width);
+                    clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                    fuselage_ct_part_cables_hole(root_cable_hole_width, root_cable_hole_perc, root_cable_hole_ellipse, root_cable_hole_offset, slice_gap_width, sweep_angle, root_cable_passage_arm_perc, root_cable_passage_main_perc, wing_mm, wing_root_mm, motor_arm_to_wing_hull, wing_root_chord_mm);
+                    clamp_fuselage_remove(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
+                    mirror([0, 0, 1])
+                        translate([0, 0, ct_width]) {
+                            center_spar_holes(ct_width);
+                            clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                            fuselage_ct_part_cables_hole(root_cable_hole_width, root_cable_hole_perc, root_cable_hole_ellipse, root_cable_hole_offset, slice_gap_width, sweep_angle, root_cable_passage_arm_perc, root_cable_passage_main_perc, wing_mm, wing_root_mm, motor_arm_to_wing_hull, wing_root_chord_mm);
+                            clamp_fuselage_remove(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
+                        }
+                    }//end of union
+        
+            render(convexity=5) // Use for simplification for calculation
+                intersection(){
+                    difference(){
+                        union(){
+                            translate(-pt_to_origin)
+                            scale([1,1,1.1])
+                            translate(pt_to_origin)
+                            render(convexity=5) // Use for simplification for calculation
+                            main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height);
+                            } //End of Union
+                        render(convexity=5) // Use for simplification for calculation
+                        void_battery_holder(ct_width, ct_length, ct_height);
+                        }//End of difference
+               
+                    translate([0,-500,-500])
+                        cube([wing_root_chord_mm,1000,1000]);
+                    }//End of intersection
+        
+
+        
+            }//End of 1st difference
+            
+        //We add fuselage screws
+        all_fuselage_screws();   
+        }//End of union 
+        
+        
+        if(Fuselage_front_part)   
+            union() {
+            translate([-500+fuselage_mid_cut,-500,0])
+                cube([1000,1000,1000], center=true);
+
+            translate([-500+x1_fuselage_screw-3,500,0])
+                cube([1000,1000,1000], center=true);
+                }
+
+        if(Fuselage_bottom_back_part)   
+            translate([500+fuselage_mid_cut,-500,0])
+                cube([1000,1000,1000], center=true);                
+
+        if(Fuselage_upper_back_part)   
+            translate([500+x1_fuselage_screw,500,0])
+                cube([1000,1000,1000], center=true);  
+                
+    }//End of 1st intersection
+    
+
+
 
 }
 
@@ -866,7 +973,7 @@ else
     center_part_main(aero_grav_center, center_width, center_length, center_height);
 
     //**************** Fuselage part **********//
-    if(Fuselage_part || Full_system) fuselage_main(aero_grav_center);  
+    if(Fuselage_front_part || Fuselage_bottom_back_part || Fuselage_upper_back_part || Full_system) fuselage_main(aero_grav_center, center_width, center_length, center_height);  
     
     //**************** Servo horn **********//    
     if((Left_side && Servo_horn) || Full_system) servo_horn_main();
@@ -919,7 +1026,12 @@ else
         servo_block();
     }
     
+    //TODO
+
     
+
 } //End if main
+
+
 
 

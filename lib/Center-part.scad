@@ -2,7 +2,12 @@
 rear_motor_square_support_attach_width = 4;
 rear_motor_square_support_attach_length_z = 34;
 rear_motor_square_support_attach_length_y = 28;
+radius = 3;         // Radius of rounded corners
+battery_hole_width = 15;
+battery_hole_length = 25;
 
+gravity_line_width = 1;
+gravity_line_height = 0.2;
 // ------------------------
 // FUSELAGE GENERATOR
 // ------------------------
@@ -106,6 +111,9 @@ module CreateFuselage(fuse_ellipse_param) {
             
             }//End of translate
         
+
+
+
 }
 
 module tail_fuselage(){
@@ -126,6 +134,114 @@ module tail_fuselage(){
         }//End of rotate
     }//End of translate
 }
+
+module all_fuselage_screws(screw_radius = 1.6, boss_height = 10, screw_clearance_hole = false) {
+    
+    if(screw_clearance_hole == false) {
+    
+        intersection() {
+        
+        render(convexity=5) // Use for simplification for calculation
+        CreateFuselage(fuselage_ellipse_param);
+            union() {
+            
+            fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw);
+            fuselage_screw(x2_fuselage_screw, z_offset = 0);
+            fuselage_screw(x3_fuselage_screw, z_offset = 0);
+            fuselage_screw(x4_fuselage_screw, z_offset = 0);
+            mirror([0, 0, 1]) 
+                translate([0, 0, center_width]){
+                    fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw);
+                    fuselage_screw(x2_fuselage_screw, z_offset = 0);
+                    fuselage_screw(x3_fuselage_screw, z_offset = 0);
+                    fuselage_screw(x4_fuselage_screw, z_offset = 0);
+                }//End of Translate
+                
+                
+            }//End of union
+            
+        }//End of intersection
+        
+    } if (screw_clearance_hole == true) {
+    
+            fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x2_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x3_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x4_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
+            mirror([0, 0, 1]) 
+                translate([0, 0, center_width]){
+                    fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x2_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x3_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x4_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
+                }//End of Translate
+                
+    }
+}
+
+
+//screw_clearance_hole parameter is used for create hole in center part to insert screws
+module fuselage_screw(x_pos, z_offset = 0, screw_radius = 1.6, boss_height = 10, screw_clearance_hole = false) {
+
+    y_pos = center_height-main_stage_y_width - boss_height;
+    boss_radius = 8;
+
+    if(screw_clearance_hole == false) {    
+    
+        translate([x_pos, y_pos, -boss_radius/2 + z_offset])
+            rotate([90,0,0])
+                difference(){
+
+                    // Solid boss
+                    //cylinder(h=boss_height, r=boss_radius, center = true, $fn=50);
+                    linear_extrude(h=boss_height, center=false)
+                        square(boss_radius, center = true, $fn=50);   
+                    
+
+                    // Screw clearance hole
+                    translate([0,0,-1])
+                        cylinder(h=boss_height+2, r=screw_radius, center = true, $fn=40);
+                }
+                
+    } if (screw_clearance_hole == true) {   
+
+        translate([x_pos, y_pos+boss_height/2, -boss_radius/2 + z_offset])
+            rotate([90,0,0])
+
+                    // Screw clearance hole
+                    translate([0,0,-1])
+                        cylinder(h=4*boss_height+2, r=screw_radius, center = true, $fn=40);
+                        
+    }
+   
+
+        
+}
+
+module aeration_fuselage(flip = false) {
+    
+    base = aeration_width;
+    height = aeration_length;
+    thickness = 200;
+    
+    triangle_points = [[-base/2, -height/2], [base/2, -height/2],[0,height/2]];
+    
+    if(flip == false) 
+        rotate([90,0,0])
+            rotate([0,0,90])
+                linear_extrude(h=thickness, center = true)
+                    polygon(points=triangle_points);
+
+    if(flip == true) 
+        rotate([0,180,0])
+            rotate([90,0,0])
+                rotate([0,0,90])
+                    linear_extrude(h=thickness, center = true)
+                        polygon(points=triangle_points);                    
+}
+
+
+
 
 
 function fuselage_sections() = 
@@ -228,7 +344,9 @@ module bubble_bezier_fit_superellipse(length, rx, ry, n = [4,4]){
     }
 }
 
-
+  
+    
+    
 
 // ------------------------
 // CENTER PART
@@ -240,11 +358,7 @@ module center_part(aero_grav_center, ct_width, ct_length, ct_height, rear_motor_
 // 
 // Parameters
 // ------------------------
-ct_width =  center_width;
-ct_length = center_length;
-ct_height = center_height; 
 size = [ct_length, ct_width];    // Square size (X, Y)
-radius = 3;         // Radius of rounded corners
 tawaki_int_pin_rad = 1.25;
 tawaki_ext_pin_rad = 2.9;
 tawaki_ext_pin_filet_rad = 1;
@@ -258,14 +372,6 @@ esc_ext_pin_filet_rad = 1;
 esc_pin_height = 5;
 esc_pin_space_length = 32;
 esc_pin_space_width = 30.7;
-
-
-gravity_line_width = 1;
-gravity_line_height = 0.2;
-
-battery_width = ct_width -20;//-10; // Distance of battery holder void from extremity
-battery_hole_width = 15;
-battery_hole_length = 25;
 
 
 rear_motor_int_circle_r = 4.75;
@@ -307,9 +413,11 @@ one_front_length = ct_length- front_offset - rear_x_length - mid_rear_x_length -
 one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
 
 
+
+
  
 
-        if(rear_motor_mode == false) {
+        if(rear_motor_mode == false && shape_only_mode == false) {
 
 
             translate([0,center_part_y_offset,0]) {
@@ -318,12 +426,12 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
             difference(){ //Difference for battery holder   
             
             difference(){ //Difference for the grid   
-                main_stage_and_gravity_line(aero_grav_center);
+                main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height);
                 grid_center_part();
             
             } // End Difference for the grid   
              
-            void_battery_holder();
+            void_battery_holder(ct_width, ct_length, ct_height);
             rear_motor_screw_removal();//Remove rear motor screw hole
             }// End of Difference for battery holder 
                        
@@ -347,9 +455,10 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
         if(shape_only_mode == true) {
             translate([0,center_part_y_offset,0]) {
             
-                difference(){ //Difference for battery holder   
-                    main_stage_and_gravity_line(aero_grav_center);
-                    void_battery_holder();
+                difference(){ //Difference for battery holder  
+                 
+                    main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height);
+                    void_battery_holder(ct_width, ct_length, ct_height);
                 }// End of Difference for battery holder 
                 
             } // End of translate
@@ -359,28 +468,7 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
  
    
   
- 
-module main_stage_and_gravity_line(aero_grav_center){
 
-        union(){
-        //Main stage support definition
-        translate([ct_length/2 - main_stage_x_offset,main_stage_y_width,-ct_width/2])
-            rotate([90,0,0])
-                linear_extrude(ct_height)
-                    offset(r=radius)
-                        offset(delta=-radius)
-                            square([ct_length, ct_width], center=true);
-                          
-        //Draw CG Line on main stage up and bottom
-        translate([aero_grav_center[1],main_stage_y_width,-ct_width])  
-            color("red")
-                cube([gravity_line_width,gravity_line_height, ct_width]);
-
-        translate([aero_grav_center[1],main_stage_y_width - ct_height - gravity_line_height,-ct_width])  
-            color("red")
-                cube([gravity_line_width,gravity_line_height, ct_width]);
-     } // End of union 1
-} 
 
 
 module grid_center_part(){
@@ -461,70 +549,7 @@ module slot_grid(){
 }
 
 
-module void_battery_holder(){
 
-     union(){ //Union for battery hole to attach to Center part
-
-        translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-
-        translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-                    
-        translate([battery_x_pos_2,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-
-        translate([battery_x_pos_2,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);     
-                   
-        translate([battery_x_pos_3,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-
-        translate([battery_x_pos_3,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);                       
-
-        translate([battery_x_pos_4,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-
-        translate([battery_x_pos_4,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);  
-                    
-        translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-
-        translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);       
-     
-        translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-
-        translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-               
-        translate([battery_x_pos_7,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
-
-        translate([battery_x_pos_7,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
-            color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);          
-          
-                    
-     }// End of union 2
-
-}
 
 module cyl_with_fillet(h, r, fillet_r) {
 
@@ -821,6 +846,94 @@ module rear_motor_screw_removal(){
 }// End of Center part module
  
 
+module main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height){
+
+        union(){
+        //Main stage support definition
+        translate([ct_length/2 - main_stage_x_offset,main_stage_y_width,-ct_width/2])
+            rotate([90,0,0])
+                linear_extrude(ct_height)
+                    offset(r=radius)
+                        offset(delta=-radius)
+                            square([ct_length, ct_width], center=true);
+                          
+        //Draw CG Line on main stage up and bottom
+        translate([aero_grav_center[1],main_stage_y_width,-ct_width])  
+            color("red")
+                cube([gravity_line_width,gravity_line_height, ct_width]);
+
+        translate([aero_grav_center[1],main_stage_y_width - ct_height - gravity_line_height,-ct_width])  
+            color("red")
+                cube([gravity_line_width,gravity_line_height, ct_width]);
+     } // End of union 1
+}  
+ 
+
+module void_battery_holder(ct_width, ct_length, ct_height){
+
+     union(){ //Union for battery hole to attach to Center part
+
+        translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+                    
+        translate([battery_x_pos_2,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_2,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);     
+                   
+        translate([battery_x_pos_3,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_3,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);                       
+
+        translate([battery_x_pos_4,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_4,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);  
+                    
+        translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);       
+     
+        translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+               
+        translate([battery_x_pos_7,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+
+        translate([battery_x_pos_7,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);          
+          
+                    
+     }// End of union 2
+
+} 
+ 
 //bubble_bezier_fit_elliptic(length=nozzle_length, rx=s[0][1], ry=s[0][2]);
 /*    
 module bubble_bezier_fit_elliptic(length, rx, ry) {
