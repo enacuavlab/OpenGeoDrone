@@ -2,6 +2,10 @@
 rear_motor_square_support_attach_width = 4;
 rear_motor_square_support_attach_length_z = 34;
 rear_motor_square_support_attach_length_y = 28;
+rear_motor_int_circle_r = 4.75;
+rear_motor_int_circ_attach_r = 1.5;
+rear_motor_int_circ_attach_dist_to_ct = 8 + rear_motor_int_circ_attach_r;
+rear_motor_screw_hole = 1.25;
 radius = 3;         // Radius of rounded corners
 battery_hole_width = 15;
 battery_hole_length = 25;
@@ -135,7 +139,212 @@ module tail_fuselage(){
     }//End of translate
 }
 
-module all_fuselage_screws(screw_radius = 1.6, boss_height = 10, screw_clearance_hole = false) {
+
+
+//Module for pitot tube creation
+//outside_diameter == true => outside diameter drawing for fuselage
+//outside_diameter == false => make hole inside outside diameter for pitot tube insertion
+module Create_pitot(pitot_rad, pitot_length = 40, outside_diameter = true) {
+
+    if(outside_diameter == true){
+    
+    difference() {
+    
+        intersection() {
+            
+            render(convexity=5) // Use for simplification for calculation
+                CreateFuselage(fuselage_ellipse_param);
+           
+            translate([-fuselage_x_offset-nozzle_length+pitot_length/2,0,-center_width/2])
+                rotate([0,90,0])
+                    cylinder(h=pitot_length, r=2*pitot_rad, center = true, $fn=50);       
+        }//End intersection
+    
+        translate([-fuselage_x_offset-nozzle_length+pitot_length/2,0,-center_width/2])
+        rotate([0,90,0])
+        cylinder(h=2*pitot_length, r=pitot_rad, center = true, $fn=50); 
+        
+    }//End difference
+    
+    }//End if
+    
+    if(outside_diameter == false){
+
+        translate([-fuselage_x_offset-nozzle_length+pitot_length/2,0,-center_width/2])
+            rotate([0,90,0])
+                cylinder(h=2*pitot_length, r=pitot_rad, center = true, $fn=50);       
+        
+    }
+}
+
+
+
+
+//Module to create a overlapp between bottom and to front to get a nice fuselage transition between part
+module fuselage_bottom_front_transition(aero_grav_center, x_offset, overlap_length = 15) {
+
+    coordinate_to_origin = [-x_offset,0,center_width/2];
+
+ 
+        difference(){
+            
+            
+                translate(-coordinate_to_origin) 
+                    scale(0.98) 
+                        translate(coordinate_to_origin) 
+                            fuselage_transition(x_offset, overlap_length, up = false);
+                            
+                translate(-coordinate_to_origin) 
+                    scale(0.96) 
+                        translate(coordinate_to_origin) 
+                            fuselage_transition(x_offset, overlap_length+2, up = false);  
+  
+            render() // Use for simplification for calculation            
+                center_part(aero_grav_center, center_width, center_length, center_height, shape_only_mode = true);  
+              } 
+              
+}
+
+
+//Module used to create a small block at the end of the center par to stop the fuselage
+module rear_fuselage_block (aero_grav_center, rear_offset = 2) {
+
+    cube_position = L_total- main_stage_x_offset - rear_offset;
+    difference() {
+    
+        intersection() {
+            render() // Use for simplification for calculation
+                CreateFuselage(fuselage_ellipse_param);  
+
+            translate([500+cube_position,500,0])
+                cube([1000,1000,1000], center=true);                
+                    
+        }//End of intersection
+        
+        rear_motor_screw_removal();
+        //we make room for rear motor cable 
+        rear_motor_cable_passage();  
+        
+    
+    }//End of difference
+}
+
+
+//Module to create a overlapp between upper and to front to get a nice fuselage transition between part
+module fuselage_up_front_transition(aero_grav_center, x_offset, overlap_length = 15) {
+
+    coordinate_to_origin = [-x_offset,0,center_width/2];
+
+ 
+        difference(){
+            
+            
+                translate(-coordinate_to_origin) 
+                    scale(0.98) 
+                        translate(coordinate_to_origin) 
+                            fuselage_transition(x_offset-2, overlap_length, up = true);
+                            
+                translate(-coordinate_to_origin) 
+                    scale(0.96) 
+                        translate(coordinate_to_origin) 
+                            fuselage_transition(x_offset, overlap_length+5, up = true);  
+  
+            render() // Use for simplification for calculation            
+                center_part(aero_grav_center, center_width, center_length, center_height, shape_only_mode = true);  
+              } 
+              
+}
+
+module fuselage_transition(x_offset, overlap_length = 15, up = true) {
+
+    intersection(){
+
+        render() // Use for simplification for calculation
+            CreateFuselage(fuselage_ellipse_param);
+        
+            if(up == true)
+                translate([x_offset,500,0])
+                    cube([overlap_length,1000,1000], center=true);
+                    
+            if(up == false)
+                translate([x_offset,-500,0])
+                    cube([overlap_length,1000,1000], center=true);                
+    }
+}
+
+
+// if fuselage_mode == true => magnet for fuselage, if fuselage_mode == false => magnet for cetner part
+module all_magnet(magnet_dim, fuselage_mode = true) {
+    
+    
+
+        shell_scale = 1.8;
+        
+        intersection() {
+        
+        render(convexity=5) // Use for simplification for calculation
+        CreateFuselage(fuselage_ellipse_param);
+            union() {
+            
+            fuselage_magnet(x1_fuselage_magnet, z_offset = z1_offset_magnet, magnet_dim, shell_scale, fuselage_mode);
+            fuselage_magnet(x2_fuselage_magnet, z_offset = z2_offset_magnet, magnet_dim, shell_scale, fuselage_mode);
+
+            mirror([0, 0, 1]) 
+                translate([0, 0, center_width]){
+                    fuselage_magnet(x1_fuselage_magnet, z_offset = z1_offset_magnet, magnet_dim, shell_scale, fuselage_mode);
+                    fuselage_magnet(x2_fuselage_magnet, z_offset = z2_offset_magnet, magnet_dim, shell_scale, fuselage_mode);
+
+                }//End of Translate
+                
+                
+            }//End of union
+            
+        }//End of intersection
+        
+}
+
+
+//screw_clearance_hole parameter is used for create hole in center part to insert screws
+module fuselage_magnet(x_pos, z_offset = 0, magnet_dim, shell_scale, fuselage_mode) {
+
+    
+    y_pos = main_stage_y_width + magnet_dim[2]*shell_scale;
+
+    
+    //magnet for fuselage 
+    if(fuselage_mode ==  true)
+        translate([x_pos, y_pos, -magnet_dim[2]/2 + z_offset]) 
+            rotate([-90,0,0])
+                difference(){
+
+                    linear_extrude(h=magnet_dim[2]*shell_scale*3, center=false)
+                        square([magnet_dim[0]*shell_scale,magnet_dim[1]*shell_scale], center = true, $fn=50);   
+                    
+
+                    // Screw clearance hole
+                        linear_extrude(h=magnet_dim[2], center=false)
+                            square([magnet_dim[0],magnet_dim[1]], center = true, $fn=50);   
+              }
+
+    //magnet for center part
+    if(fuselage_mode ==  false)
+        translate([x_pos, y_pos, -magnet_dim[2]/2 + z_offset]) 
+            rotate([90,0,0])
+                difference(){
+
+                    linear_extrude(h=magnet_dim[2]*shell_scale, center=false)
+                        square([magnet_dim[0]*shell_scale,magnet_dim[1]*shell_scale], center = true, $fn=50);   
+                    
+
+                    // Screw clearance hole
+                        linear_extrude(h=magnet_dim[2], center=false)
+                            square([magnet_dim[0],magnet_dim[1]], center = true, $fn=50);   
+              }              
+
+        
+}
+
+module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
     
     if(screw_clearance_hole == false) {
     
@@ -181,7 +390,7 @@ module all_fuselage_screws(screw_radius = 1.6, boss_height = 10, screw_clearance
 
 
 //screw_clearance_hole parameter is used for create hole in center part to insert screws
-module fuselage_screw(x_pos, z_offset = 0, screw_radius = 1.6, boss_height = 10, screw_clearance_hole = false) {
+module fuselage_screw(x_pos, z_offset = 0, boss_height = 10, screw_clearance_hole = false) {
 
     y_pos = center_height-main_stage_y_width - boss_height;
     boss_radius = 8;
@@ -200,7 +409,7 @@ module fuselage_screw(x_pos, z_offset = 0, screw_radius = 1.6, boss_height = 10,
 
                     // Screw clearance hole
                     translate([0,0,-1])
-                        cylinder(h=boss_height+2, r=screw_radius, center = true, $fn=40);
+                        cylinder(h=boss_height+2, r=fuselage_screw_radius, center = true, $fn=40);
                 }
                 
     } if (screw_clearance_hole == true) {   
@@ -210,7 +419,7 @@ module fuselage_screw(x_pos, z_offset = 0, screw_radius = 1.6, boss_height = 10,
 
                     // Screw clearance hole
                     translate([0,0,-1])
-                        cylinder(h=4*boss_height+2, r=screw_radius, center = true, $fn=40);
+                        cylinder(h=4*boss_height+2, r=fuselage_screw_radius, center = true, $fn=40);
                         
     }
    
@@ -374,10 +583,7 @@ esc_pin_space_length = 32;
 esc_pin_space_width = 30.7;
 
 
-rear_motor_int_circle_r = 4.75;
-rear_motor_int_circ_attach_r = 1.5;
-rear_motor_int_circ_attach_dist_to_ct = 8 + rear_motor_int_circ_attach_r;
-rear_motor_screw_hole = 1.25;
+
 y_offset_rear_motor = rear_motor_square_support_attach_length_y/2 + ct_height/2;
 
 tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*esc_ext_pin_rad  - esc_x_offset_pos;
@@ -572,32 +778,32 @@ module tawaki_pin_support(){
 
 //Tawaki pin support definition 1                
     //translate([tawaki_x_offset_pos + tawaki_ext_pin_rad,main_stage_y_width + tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
-    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height,-ct_width/2-tawaki_pin_space_width/2])
-        rotate([-90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad,main_stage_y_width+tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
+        rotate([90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }
     //Tawaki pin support definition 2                
-    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height,-ct_width/2+tawaki_pin_space_width/2])
-        rotate([-90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad,main_stage_y_width+tawaki_pin_height,-ct_width/2+tawaki_pin_space_width/2])
+        rotate([90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }                
     //Tawaki pin support definition 3                
-    translate([tawaki_esc_space + esc_ext_pin_rad + tawaki_pin_space_length+1,-ct_height,-ct_width/2-tawaki_pin_space_width/2])
-        rotate([-90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad + tawaki_pin_space_length+1,main_stage_y_width+tawaki_pin_height,-ct_width/2-tawaki_pin_space_width/2])
+        rotate([90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
                     cylinder(h = tawaki_pin_height, r = tawaki_int_pin_rad, center = false);
                 }                
     //Tawaki pin support definition 4                
-    translate([tawaki_esc_space + esc_ext_pin_rad + tawaki_pin_space_length+1,-ct_height,-ct_width/2+tawaki_pin_space_width/2])
-        rotate([-90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad + tawaki_pin_space_length+1,main_stage_y_width+tawaki_pin_height,-ct_width/2+tawaki_pin_space_width/2])
+        rotate([90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = tawaki_pin_height, r = tawaki_ext_pin_rad, tawaki_ext_pin_filet_rad);
@@ -610,32 +816,32 @@ module tawaki_pin_support(){
 module esc_pin_support(){
 
 //ESC pin support definition 1                
-    translate([tawaki_esc_space + esc_ext_pin_rad,main_stage_y_width + esc_pin_height,-ct_width/2-esc_pin_space_width/2])
-        rotate([90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height + main_stage_y_width - esc_pin_height ,-ct_width/2-esc_pin_space_width/2])
+        rotate([-90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
                 }
     //ESC pin support definition 2                
-    translate([tawaki_esc_space + esc_ext_pin_rad,main_stage_y_width + esc_pin_height,-ct_width/2+esc_pin_space_width/2])
-        rotate([90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height + main_stage_y_width - esc_pin_height,-ct_width/2+esc_pin_space_width/2])
+        rotate([-90,0,0])                    
             color("grey")
                 difference(){
                    cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
                 }                
     //ESC pin support definition 3                
-    translate([tawaki_esc_space + esc_ext_pin_rad + esc_pin_space_length,main_stage_y_width + esc_pin_height,-ct_width/2-esc_pin_space_width/2])
-        rotate([90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad + esc_pin_space_length,-ct_height + main_stage_y_width - esc_pin_height,-ct_width/2-esc_pin_space_width/2])
+        rotate([-90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
                 }                
     //ESC pin support definition 4                
-    translate([tawaki_esc_space + esc_ext_pin_rad + esc_pin_space_length,main_stage_y_width + esc_pin_height,-ct_width/2+esc_pin_space_width/2])
-        rotate([90,0,0])                    
+    translate([tawaki_esc_space + esc_ext_pin_rad + esc_pin_space_length,-ct_height + main_stage_y_width - esc_pin_height,-ct_width/2+esc_pin_space_width/2])
+        rotate([-90,0,0])                    
             color("grey")
                 difference(){
                     cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
@@ -797,6 +1003,30 @@ module rear_motor(){
     } // End of difference
 }
 
+}// End of Center part module
+
+
+
+
+//Module use ofr removing center part and make room for rear motor cables
+module rear_motor_cable_passage (){
+
+    cable_passage_radius = 3.5;
+    cable_passage_length = 20;    
+    
+    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2  ,-center_width/4]) {
+    
+        rotate([0,90,0])
+            cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50);  
+            
+        translate([-cable_passage_length/2,0,0])
+            rotate([0,0,90])
+                rotate([0,90,0])
+                    cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
+
+    }
+}
+
 
 module rear_motor_screw_removal(){
 
@@ -805,7 +1035,7 @@ module rear_motor_screw_removal(){
     z_screw_position_offset = 5.5;
 
     
-    translate([ct_length -main_stage_x_offset- srew_hole_length,main_stage_y_width-center_height/2  ,-ct_width/2])
+    translate([center_length -main_stage_x_offset- srew_hole_length,main_stage_y_width-center_height/2  ,-center_width/2])
 
         rotate([0,90,0])
         linear_extrude(rear_motor_square_support_attach_width*3){
@@ -843,7 +1073,7 @@ module rear_motor_screw_removal(){
 }
 
 
-}// End of Center part module
+
  
 
 module main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height){

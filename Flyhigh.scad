@@ -40,17 +40,16 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// attach bottom : To be tested
-// transition back to front
-// attach top
-// Passage pitot
-// Hole rear motor aeration
+// transition + blocage arriere ? : OK
+// attach top trouver aimant : OK
+// Passage pitot : OK
+// Hole rear motor aeration and cable passage : OK
+// Inverser tawaki esc : OK
 
 // Clamp print parameter genera + parama + fuselage and rear motor
-
 // Arm + center + fuselage => angle pitch comp
 // Rear motor pitch or not ?
-// Pitot
+
 
 //Later :
 // Technique clean Chat
@@ -85,12 +84,12 @@ Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
-Center_part = false;
-Rear_motor_part = false;
+Center_part = true;
+Rear_motor_part = true;
 Clamp_fixation = false;
 Fuselage_front_part = false;
 Fuselage_bottom_back_part = false;
-Fuselage_upper_back_part = true;
+Fuselage_upper_back_part = false;
 
 //**************** Quality settings **********//
 draft_quality = false;
@@ -187,11 +186,19 @@ fuselage_scale_y = 1.25;
 aeration_width = 10;
 aeration_length = 20;
 //Fuselage screws position
+fuselage_screw_radius = 1.6;
 x1_fuselage_screw = -15;
 z1_fuselage_screw = -4;
 x2_fuselage_screw = 23;
 x3_fuselage_screw = 84;
 x4_fuselage_screw = 165;
+//Fuselage and center part magnet position
+x1_fuselage_magnet = 30;
+x2_fuselage_magnet = 156;
+magnet_dimension = [5,5,1];
+z1_offset_magnet = -7;
+z2_offset_magnet = -6;
+pitot_radius = 2;
 //******//
 
 
@@ -783,10 +790,19 @@ module center_part_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 }
                 
             //we remove the screws for attaching bottom fuselage
-            all_fuselage_screws(screw_clearance_hole = true);      
+            all_fuselage_screws(screw_clearance_hole = true); 
+       
+            //we make room for rear motor cable 
+            rear_motor_cable_passage ();     
+            
             }//End difference  
             CreateFuselage(fuselage_ellipse_param); 
         }//End Intersection
+        
+        //We remove the very end of fuselage to get the room for the fuselage tail block
+        rear_fuselage_block (aero_grav_center);
+        //magnet for center part
+        all_magnet(magnet_dimension,fuselage_mode = false);   
     }//End if
     
     if(Rear_motor_part || Full_system){
@@ -871,15 +887,23 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                     }//End of intersection
         
 
-        
+                //We remove the very end of fuselage to get the room for the fuselage tail block
+                rear_fuselage_block (aero_grav_center);
+                
+                //We draw hole for pitot tube insertion
+                Create_pitot(pitot_radius, outside_diameter = false);
+                
             }//End of 1st difference
             
         //We add fuselage screws
         all_fuselage_screws();   
+        
+
+        
         }//End of union 
         
         
-        if(Fuselage_front_part)   
+        if(Fuselage_front_part && Full_system == false)   
             union() {
             translate([-500+fuselage_mid_cut,-500,0])
                 cube([1000,1000,1000], center=true);
@@ -888,18 +912,33 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 cube([1000,1000,1000], center=true);
                 }
 
-        if(Fuselage_bottom_back_part)   
+        if(Fuselage_bottom_back_part && Full_system == false)   
             translate([500+fuselage_mid_cut,-500,0])
                 cube([1000,1000,1000], center=true);                
 
-        if(Fuselage_upper_back_part)   
+        if(Fuselage_upper_back_part && Full_system == false)   
             translate([500+x1_fuselage_screw-3,500,0])
                 cube([1000,1000,1000], center=true);  
                 
     }//End of 1st intersection
     
 
+        //We add overlapping transition between part 
+        if(Fuselage_upper_back_part) {
+            fuselage_up_front_transition(aero_grav_center, x1_fuselage_screw, overlap_length = 15);
+            //magnet for fuselage
+            all_magnet(magnet_dimension,fuselage_mode = true); 
 
+        }
+        
+        if(Fuselage_bottom_back_part)    
+            fuselage_bottom_front_transition(aero_grav_center, fuselage_mid_cut, overlap_length = 12);
+            
+            
+        //We draw outside diameter for pitot tube insertion
+        if(Fuselage_front_part || Full_system) 
+            Create_pitot(pitot_radius);
+            
 
 }
 
@@ -1015,57 +1054,14 @@ else
         servo_block();
     }
     
-    //TODO
 
-    
+
 
 } //End if main
-
-//TODO : 
-// 1 change th origin to get in the middle of the overlap
-// Incorpore this into fuselage
-// do the same for other overlap
-
-    pt_to_origin = [ -L_total/2+ main_stage_x_offset+ fuselage_x_offset-tail_length,0,center_width/2];
-
-    
-      //  difference(){
- 
-   /*     difference(){
-            fuselage_front_transition();
-            
-                translate(-pt_to_origin) 
-                    scale(0.95) */
-                        translate(pt_to_origin) 
-                            fuselage_front_transition();
-        //      }    
-              
-      /*  difference(){
-            fuselage_front_transition();
-            
-                translate(-pt_to_origin) 
-                    scale(0.98) 
-                        translate(pt_to_origin) 
-                            fuselage_front_transition();
-              } */             
-                            
-         //}
-    
-
-
-//fuselage_front_transition() ;
-
-
-module fuselage_front_transition(overlap_length = 30) {
-
-    intersection(){
-
-        render() // Use for simplification for calculation
-            CreateFuselage(fuselage_ellipse_param);
         
 
-            translate([-0+x1_fuselage_screw,500,0])
-                cube([overlap_length,1000,1000], center=true);
-                
-    }
-}
+
+ 
+
+
+
