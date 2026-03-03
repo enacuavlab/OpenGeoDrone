@@ -40,13 +40,6 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// transition + blocage arriere ? : OK
-// attach top trouver aimant : OK
-// Passage pitot : OK
-// Hole rear motor aeration and cable passage : OK
-// Inverser tawaki esc : OK
-
-// Clamp print parameter genera + parama + fuselage and rear motor
 // Arm + center + fuselage => angle pitch comp
 // Rear motor pitch or not ?
 
@@ -84,9 +77,11 @@ Motor_arm_full = false;
 Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
+
 Center_part = true;
 Rear_motor_part = true;
-Clamp_fixation = false;
+Clamp_fixation_big = false;
+Clamp_fixation_small = false;
 Fuselage_front_part = false;
 Fuselage_bottom_back_part = false;
 Fuselage_upper_back_part = false;
@@ -1012,14 +1007,22 @@ else
                 servo_horn_main();
                 
     //**************** Clamp fixation **********//    
-    if((Left_side && Clamp_fixation) || Full_system)
-        clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+    if(Clamp_fixation_big)
+        clamp_fixation_big(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+        
+    if(Clamp_fixation_small)
+        clamp_fixation_small(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);        
 
     
-    if((Right_side && Clamp_fixation) || Full_system)
+    if(Full_system){
+        clamp_fixation_big(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+        clamp_fixation_small(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
         mirror([0, 0, 1]) 
-            translate([0, 0, center_width])
-                clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);               
+            translate([0, 0, center_width]) {
+                clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);   
+                clamp_fixation_small(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);   
+                }   
+    }       
         
     //**************** Debug **********//
     if(debug_leading_trailing_edge)

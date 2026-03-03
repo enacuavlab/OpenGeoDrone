@@ -15,12 +15,17 @@ SIDE_PARTS=(
   Motor_arm_front
   Motor_arm_back
   Servo_horn
-  Clamp_fixation
 )
 
 #Parts which have no side
 CENTER_PARTS=(
   Center_part
+  Rear_motor_part
+  Clamp_fixation_big
+  Clamp_fixation_small
+  Fuselage_front_part
+  Fuselage_bottom_back_part
+  Fuselage_upper_back_part
 )
 
 
@@ -39,9 +44,23 @@ for side in "${SIDES[@]}"; do
       Full_system = false;
       Left_side=$([ "$side" == "Left" ] && echo true || echo false);
       Right_side=$([ "$side" == "Right" ] && echo true || echo false);
-      Aileron_part=false; Root_part=false; Mid_part=false; Tip_part=false;
-      Mid_Aileron_part=false; Motor_arm_full=false; Motor_arm_front=false;
-      Motor_arm_back=false; Servo_horn = false; Clamp_fixation = false; Center_part=false; draft_quality = false;
+      Aileron_part=false; 
+      Root_part=false; 
+      Mid_part=false; 
+      Tip_part=false;
+      Mid_Aileron_part=false; 
+      Motor_arm_full=false; 
+      Motor_arm_front=false;
+      Motor_arm_back=false; 
+      Servo_horn = false; 
+      Center_part=false; 
+      Rear_motor_part = false;
+      Clamp_fixation_big = false; 
+      Clamp_fixation_small = false; 
+      Fuselage_front_part = false; 
+      Fuselage_bottom_back_part = false;
+      Fuselage_upper_back_part = false; 
+      draft_quality = false;
       ${part}=true;
     " "$SRC"
   done
@@ -53,13 +72,27 @@ for part in "${CENTER_PARTS[@]}"; do
   echo "Rendering (Manifold, center) → $OUT"
 
   openscad-nightly --backend=manifold --render -o "$OUT" -D "
-    Full_system = false;
-    Left_side=false;
-    Right_side=false;
-    Aileron_part=false; Root_part=false; Mid_part=false; Tip_part=false;
-    Mid_Aileron_part=false; Motor_arm_full=false; Motor_arm_front=false;
-    Motor_arm_back=false; Servo_horn = false; Clamp_fixation = false; Center_part=false; draft_quality = false;
-    ${part}=true;
+      Full_system = false;
+      Left_side=false;
+      Right_side=false;
+      Aileron_part=false; 
+      Root_part=false; 
+      Mid_part=false; 
+      Tip_part=false;
+      Mid_Aileron_part=false; 
+      Motor_arm_full=false; 
+      Motor_arm_front=false;
+      Motor_arm_back=false; 
+      Servo_horn = false; 
+      Center_part=false; 
+      Rear_motor_part = false;
+      Clamp_fixation_big = false; 
+      Clamp_fixation_small = false; 
+      Fuselage_front_part = false; 
+      Fuselage_bottom_back_part = false;
+      Fuselage_upper_back_part = false; 
+      draft_quality = false;
+      ${part}=true;
   " "$SRC"
 done
 
