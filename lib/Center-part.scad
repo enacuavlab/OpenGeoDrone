@@ -7,8 +7,7 @@ rear_motor_int_circ_attach_r = 1.5;
 rear_motor_int_circ_attach_dist_to_ct = 8 + rear_motor_int_circ_attach_r;
 rear_motor_screw_hole = 1.25;
 radius = 3;         // Radius of rounded corners
-battery_hole_width = 15;
-battery_hole_length = 25;
+
 
 gravity_line_width = 1;
 gravity_line_height = 0.2;
@@ -355,15 +354,15 @@ module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
             union() {
             
             fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw);
-            fuselage_screw(x2_fuselage_screw, z_offset = 0);
-            fuselage_screw(x3_fuselage_screw, z_offset = 0);
-            fuselage_screw(x4_fuselage_screw, z_offset = 0);
+            fuselage_screw(x2_fuselage_screw, z_offset = z_fuselage_all_screw);
+            fuselage_screw(x3_fuselage_screw, z_offset = z_fuselage_all_screw);
+            fuselage_screw(x4_fuselage_screw, z_offset = z_fuselage_all_screw);
             mirror([0, 0, 1]) 
                 translate([0, 0, center_width]){
                     fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw);
-                    fuselage_screw(x2_fuselage_screw, z_offset = 0);
-                    fuselage_screw(x3_fuselage_screw, z_offset = 0);
-                    fuselage_screw(x4_fuselage_screw, z_offset = 0);
+                    fuselage_screw(x2_fuselage_screw, z_offset = z_fuselage_all_screw);
+                    fuselage_screw(x3_fuselage_screw, z_offset = z_fuselage_all_screw);
+                    fuselage_screw(x4_fuselage_screw, z_offset = z_fuselage_all_screw);
                 }//End of Translate
                 
                 
@@ -374,15 +373,15 @@ module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
     } if (screw_clearance_hole == true) {
     
             fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
-            fuselage_screw(x2_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
-            fuselage_screw(x3_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
-            fuselage_screw(x4_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x2_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x3_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x4_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
             mirror([0, 0, 1]) 
                 translate([0, 0, center_width]){
                     fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
-                    fuselage_screw(x2_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
-                    fuselage_screw(x3_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
-                    fuselage_screw(x4_fuselage_screw, z_offset = 0, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x2_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x3_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x4_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
                 }//End of Translate
                 
     }
@@ -393,18 +392,18 @@ module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
 module fuselage_screw(x_pos, z_offset = 0, boss_height = 10, screw_clearance_hole = false) {
 
     y_pos = center_height-main_stage_y_width - boss_height;
-    boss_radius = 8;
+    boss_radius = 14;
 
     if(screw_clearance_hole == false) {    
     
         translate([x_pos, y_pos, -boss_radius/2 + z_offset])
             rotate([90,0,0])
                 difference(){
-
-                    // Solid boss
-                    //cylinder(h=boss_height, r=boss_radius, center = true, $fn=50);
-                    linear_extrude(h=boss_height, center=false)
-                        square(boss_radius, center = true, $fn=50);   
+                
+                    //Square for screw reception
+                    translate([0, boss_radius/4, 0])
+                        linear_extrude(h=boss_height, center=false)
+                            square(boss_radius, center = true, $fn=50);   
                     
 
                     // Screw clearance hole
@@ -571,7 +570,7 @@ size = [ct_length, ct_width];    // Square size (X, Y)
 tawaki_int_pin_rad = 1.25;
 tawaki_ext_pin_rad = 2.9;
 tawaki_ext_pin_filet_rad = 1;
-tawaki_pin_height = 10;
+tawaki_pin_height = 7;
 tawaki_pin_space_length = 30.2;
 tawaki_pin_space_width = 30.2;
 
@@ -590,15 +589,11 @@ tawaki_esc_space = ct_length - main_stage_x_offset - esc_pin_space_length - 2*es
 
 main_part_rear_spar_screw_radius = 1.13;
 
-
-// === Grid Parameters ===
 // === Grid Parameters ===
 front_offset = 6;
 grid_width = 40;
 grid_length = 210;
-slot_width    = 5;     
-slot_spacing  = 10;     
-grid_angle    = 45;  
+
 
 front_x_length = tawaki_pin_space_length - front_offset -2.5;
 front_x_offset = tawaki_x_offset_pos + front_offset+ front_x_length/2 +1;// + tawaki_pin_space_length/2;  
@@ -611,10 +606,10 @@ mid_x_offset = tawaki_x_offset_pos + tawaki_pin_space_length + mid_x_length/2 + 
 mid_x_width = ct_width - 25;//15;
 mid_rear_x_length = esc_pin_space_length - 3*esc_ext_pin_rad;
 mid_rear_x_offset = tawaki_esc_space + 2.5*esc_ext_pin_rad + mid_rear_x_length/2; 
-mid_rear_x_width = ct_width - 25; //15;
+mid_rear_x_width = ct_width - 25; //Below ESC
 rear_x_length = ct_length- main_stage_x_offset - (tawaki_esc_space + 5*esc_ext_pin_rad + mid_rear_x_length) - front_offset;
 rear_x_offset = tawaki_esc_space + 5.5*esc_ext_pin_rad + mid_rear_x_length+ rear_x_length/2;
-rear_x_width = ct_width - 40;//15;
+rear_x_width = ct_width - 30;//15;
 one_front_length = ct_length- front_offset - rear_x_length - mid_rear_x_length -7.5*esc_ext_pin_rad;
 one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
 
@@ -639,13 +634,15 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
              
             void_battery_holder(ct_width, ct_length, ct_height);
             rear_motor_screw_removal();//Remove rear motor screw hole
+            
+            //*** ESC ***//
+            esc_pin_support();
+            
             }// End of Difference for battery holder 
                        
             //*** Tawaki ***//
             tawaki_pin_support();
             
-            //*** ESC ***//
-            esc_pin_support();
 
             } // End of translate
         
@@ -659,15 +656,9 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
         } //End if rear_motor_mode
         
         if(shape_only_mode == true) {
-            translate([0,center_part_y_offset,0]) {
-            
-                difference(){ //Difference for battery holder  
-                 
+            translate([0,center_part_y_offset,0]) 
                     main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height);
-                    void_battery_holder(ct_width, ct_length, ct_height);
-                }// End of Difference for battery holder 
-                
-            } // End of translate
+
         } //End if shape_only_mode
         
         
@@ -693,29 +684,6 @@ module grid_center_part(){
             slot_grid();
         }
         
-    //Front part under Tawaki
-  /*  render(convexity=5) // Use for simplification for calculation
-    translate([front_x_offset,0,-center_width/2])
-        rotate([90, 0, 0])
-        difference() {
-            // Principal part
-            cube([front_x_length, front_x_width, 2*center_height], center = true);
-
-            // Slot grid
-            slot_grid();
-        }*/
-              
-    //Mid part 
- /*   render(convexity=5) // Use for simplification for calculation
-    translate([mid_x_offset,0,-center_width/2])
-    rotate([90, 0, 0])
-        difference() {
-            // Principal part
-            cube([mid_x_length, mid_x_width, 2*center_height], center = true);
-
-            // Slot grid
-            slot_grid();
-        }*/
         
      //Rear Mid part below ESC  
     render(convexity=5) // Use for simplification for calculation
@@ -746,12 +714,18 @@ module grid_center_part(){
 
 
 module slot_grid(){
-    union(){ 
+    translate([0, grid_z_offset, 0])
         rotate([0, 0, grid_angle])
             for (x = [-grid_length : slot_spacing : grid_length])
                 translate([x, 0, 0])
                     cube([slot_width, grid_width * 10, 2*center_height], center = true);
-    }
+
+    translate([0, grid_z_offset, 0])                    
+        rotate([0, 0, -grid_angle])
+            for (x = [-grid_length : slot_spacing : grid_length])
+                translate([x, 0, 0])
+                    cube([slot_width, grid_width * 10, 2*center_height], center = true);
+
 }
 
 
@@ -816,106 +790,40 @@ module tawaki_pin_support(){
 module esc_pin_support(){
 
 //ESC pin support definition 1                
-    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height + main_stage_y_width - esc_pin_height ,-ct_width/2-esc_pin_space_width/2])
+    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height + main_stage_y_width ,-ct_width/2-esc_pin_space_width/2])
         rotate([-90,0,0])                    
             color("grey")
-                difference(){
-                    cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
+                //difference(){
+                    //cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
-                }
+                //}
     //ESC pin support definition 2                
-    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height + main_stage_y_width - esc_pin_height,-ct_width/2+esc_pin_space_width/2])
+    translate([tawaki_esc_space + esc_ext_pin_rad,-ct_height + main_stage_y_width,-ct_width/2+esc_pin_space_width/2])
         rotate([-90,0,0])                    
             color("grey")
-                difference(){
-                   cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
+               // difference(){
+                   //cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
-                }                
+               // }                
     //ESC pin support definition 3                
-    translate([tawaki_esc_space + esc_ext_pin_rad + esc_pin_space_length,-ct_height + main_stage_y_width - esc_pin_height,-ct_width/2-esc_pin_space_width/2])
+    translate([tawaki_esc_space + esc_ext_pin_rad + esc_pin_space_length,-ct_height + main_stage_y_width,-ct_width/2-esc_pin_space_width/2])
         rotate([-90,0,0])                    
             color("grey")
-                difference(){
-                    cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
+                //difference(){
+                    //cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
-                }                
+                //}                
     //ESC pin support definition 4                
-    translate([tawaki_esc_space + esc_ext_pin_rad + esc_pin_space_length,-ct_height + main_stage_y_width - esc_pin_height,-ct_width/2+esc_pin_space_width/2])
+    translate([tawaki_esc_space + esc_ext_pin_rad + esc_pin_space_length,-ct_height + main_stage_y_width,-ct_width/2+esc_pin_space_width/2])
         rotate([-90,0,0])                    
             color("grey")
-                difference(){
-                    cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
+                //difference(){
+                    //cyl_with_fillet(h = esc_pin_height, r = esc_ext_pin_rad, esc_ext_pin_filet_rad);
                     cylinder(h = esc_pin_height, r = esc_int_pin_rad, center = false);
-                }   
+               // }   
 
 }
 
-/*
-module rear_motor_attach(){
-
-    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width - y_offset_rear_motor,-ct_width/2+ rear_motor_square_support_attach_length_z/2])
-        rotate([0,180,0])
-        linear_extrude(height = rear_motor_square_support_attach_width)
-        polygon(points=[[0, 0], [0, rear_motor_square_support_attach_length], [rear_motor_square_support_attach_length, 0]]);
-
-    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width - y_offset_rear_motor,-ct_width/2- rear_motor_square_support_attach_length/2+rear_motor_square_support_attach_width])
-        rotate([0,180,0])
-        linear_extrude(height = rear_motor_square_support_attach_width)
-        polygon(points=[[0, 0], [0, rear_motor_square_support_attach_length], [rear_motor_square_support_attach_length, 0]]);
-
-        
-
-    translate([ct_length - rear_motor_square_support_attach_width-main_stage_x_offset,main_stage_y_width + rear_motor_square_support_attach_length/2 - y_offset_rear_motor,-ct_width/2])
-
-        rotate([0,90,0])
-    difference(){
-        linear_extrude(rear_motor_square_support_attach_width)
-            square([rear_motor_square_support_attach_length, rear_motor_square_support_attach_length], center=true);
-            
-        rotate([45,0,0])    
-        linear_extrude(rear_motor_square_support_attach_width){
-        circle(r = rear_motor_int_circle_r); //hole for rear motor tree passage
-
-        translate([rear_motor_int_circ_attach_dist_to_ct,0,0]){//Hole for screwing the rear motor
-            translate([-rear_motor_int_circ_attach_r,0,0]) 
-            circle(r = rear_motor_int_circ_attach_r);     
-            translate([rear_motor_int_circ_attach_r,0,0]) 
-            circle(r = rear_motor_int_circ_attach_r);       
-            square([2*rear_motor_int_circ_attach_r, 2*rear_motor_int_circ_attach_r], center=true);
-        }     
-                   
-        translate([-rear_motor_int_circ_attach_dist_to_ct,0,0]){//Hole for screwing the rear motor
-            translate([-rear_motor_int_circ_attach_r,0,0]) 
-            circle(r = rear_motor_int_circ_attach_r);     
-            translate([rear_motor_int_circ_attach_r,0,0]) 
-            circle(r = rear_motor_int_circ_attach_r);       
-            square([2*rear_motor_int_circ_attach_r, 2*rear_motor_int_circ_attach_r], center=true);
-        }         
-         
-        translate([0,rear_motor_int_circ_attach_dist_to_ct,0]){//Hole for screwing the rear motor
-            rotate([0,0,90]){
-                translate([-rear_motor_int_circ_attach_r,0,0]) 
-                circle(r = rear_motor_int_circ_attach_r);     
-                translate([rear_motor_int_circ_attach_r,0,0]) 
-                circle(r = rear_motor_int_circ_attach_r);       
-                square([2*rear_motor_int_circ_attach_r, 2*rear_motor_int_circ_attach_r], center=true);
-            }
-        }   
-
-        translate([0,-rear_motor_int_circ_attach_dist_to_ct,0]){//Hole for screwing the rear motor
-            rotate([0,0,90]){
-                translate([-rear_motor_int_circ_attach_r,0,0]) 
-                circle(r = rear_motor_int_circ_attach_r);     
-                translate([rear_motor_int_circ_attach_r,0,0]) 
-                circle(r = rear_motor_int_circ_attach_r);       
-                square([2*rear_motor_int_circ_attach_r, 2*rear_motor_int_circ_attach_r], center=true);
-            }
-        }  
-
-        }// End of Linear Extrude
-    } // End of difference
-}
-*/
 
 
 module rear_motor(){
@@ -1101,6 +1009,11 @@ module main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_hei
 
 module void_battery_holder(ct_width, ct_length, ct_height){
 
+    batt_6_hole_width = 3*battery_hole_width/4;
+    batt_6_z_offset = 1*battery_hole_width/4;
+    batt_5_hole_width = 3*battery_hole_width/5;
+    batt_5_z_offset = 2*battery_hole_width/5;    
+
      union(){ //Union for battery hole to attach to Center part
 
         translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
@@ -1137,19 +1050,19 @@ module void_battery_holder(ct_width, ct_length, ct_height){
                     
         translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
             color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+                    cube([battery_hole_length,4*ct_height, batt_5_hole_width]);
 
-        translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+        translate([battery_x_pos_5,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2 + batt_5_z_offset])  
             color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);       
+                    cube([battery_hole_length,4*ct_height, batt_5_hole_width]);       
      
         translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
             color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+                    cube([battery_hole_length,4*ct_height, batt_6_hole_width]);
 
-        translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
+        translate([battery_x_pos_6,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2 + batt_6_z_offset])  
             color("green")
-                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+                    cube([battery_hole_length,4*ct_height, batt_6_hole_width]);
                
         translate([battery_x_pos_7,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
             color("green")

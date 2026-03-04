@@ -178,11 +178,11 @@ module fuselage_ct_part_cables_hole(cable_hole_width, cable_hole_perc, cable_hol
      
      
          //Hole to make room for fuselage
-        color("blue") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, -1, 0 ])
+       /* color("blue") translate([ cable_passage_main_perc/ 100 * wing_root_chordmm, -1, 0 ])
             rotate([ rotation_cable_passage, 0, 0 ]) // rotation to intrados or extrados 
                 linear_extrude(height = cable_hole_offset+1)    
                     scale([1, cable_hole_ellipse/cable_hole_width])
-                        circle(r = cable_hole_width, $fn = 100);  
+                        circle(r = cable_hole_width, $fn = 100);  */
                         
       }
         translate([-1000, -1000, z_offset_to_ct_part-cable_hole_ellipse])
