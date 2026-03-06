@@ -143,7 +143,7 @@ module tail_fuselage(){
 //Module for pitot tube creation
 //outside_diameter == true => outside diameter drawing for fuselage
 //outside_diameter == false => make hole inside outside diameter for pitot tube insertion
-module Create_pitot(pitot_rad, pitot_length = 40, outside_diameter = true) {
+module Create_pitot(pitot_rad, pitot_len, outside_diameter = true) {
 
     if(outside_diameter == true){
     
@@ -154,14 +154,14 @@ module Create_pitot(pitot_rad, pitot_length = 40, outside_diameter = true) {
             render(convexity=5) // Use for simplification for calculation
                 CreateFuselage(fuselage_ellipse_param);
            
-            translate([-fuselage_x_offset-nozzle_length+pitot_length/2,0,-center_width/2])
+            translate([-fuselage_x_offset-nozzle_length+pitot_len/2,0,-center_width/2])
                 rotate([0,90,0])
-                    cylinder(h=pitot_length, r=2*pitot_rad, center = true, $fn=50);       
+                    cylinder(h=pitot_len, r=2*pitot_rad, center = true, $fn=50);       
         }//End intersection
     
-        translate([-fuselage_x_offset-nozzle_length+pitot_length/2,0,-center_width/2])
+        translate([-fuselage_x_offset-nozzle_length+pitot_len/2,0,-center_width/2])
         rotate([0,90,0])
-        cylinder(h=2*pitot_length, r=pitot_rad, center = true, $fn=50); 
+        cylinder(h=2*pitot_len, r=pitot_rad, center = true, $fn=50); 
         
     }//End difference
     
@@ -169,9 +169,9 @@ module Create_pitot(pitot_rad, pitot_length = 40, outside_diameter = true) {
     
     if(outside_diameter == false){
 
-        translate([-fuselage_x_offset-nozzle_length+pitot_length/2,0,-center_width/2])
+        translate([-fuselage_x_offset-nozzle_length+pitot_len/2,0,-center_width/2])
             rotate([0,90,0])
-                cylinder(h=2*pitot_length, r=pitot_rad, center = true, $fn=50);       
+                cylinder(h=2*pitot_len, r=pitot_rad, center = true, $fn=50);       
         
     }
 }
@@ -205,8 +205,9 @@ module fuselage_bottom_front_transition(aero_grav_center, x_offset, overlap_leng
 }
 
 
-//Module used to create a small block at the end of the center par to stop the fuselage
-module rear_fuselage_block (aero_grav_center, rear_offset = 2) {
+//Module used to create a small block at the end of the center part to stop the fuselage
+//Hole parameter is used when we draw the part to activate a hole drawing in the middle
+module rear_fuselage_block (aero_grav_center, rear_offset = 2, hole = false) {
 
     cube_position = L_total- main_stage_x_offset - rear_offset;
     difference() {
@@ -222,7 +223,10 @@ module rear_fuselage_block (aero_grav_center, rear_offset = 2) {
         
         rear_motor_screw_removal();
         //we make room for rear motor cable 
-        rear_motor_cable_passage();  
+        rear_motor_cable_passage(); 
+        //We remove part to get smthg lighter and more aeration
+        if(hole)
+            rear_fuselage_block_grid(); 
         
     
     }//End of difference
@@ -233,6 +237,7 @@ module rear_fuselage_block (aero_grav_center, rear_offset = 2) {
 module fuselage_up_front_transition(aero_grav_center, x_offset, overlap_length = 15) {
 
     coordinate_to_origin = [-x_offset,0,center_width/2];
+    scale_factor_overlappint_y_reduction = 1.5;
 
  
         difference(){
@@ -248,6 +253,9 @@ module fuselage_up_front_transition(aero_grav_center, x_offset, overlap_length =
                         translate(coordinate_to_origin) 
                             fuselage_transition(x_offset, overlap_length+5, up = true);  
   
+            translate(-coordinate_to_origin)
+            scale([1,scale_factor_overlappint_y_reduction,1])
+            translate(coordinate_to_origin)
             render() // Use for simplification for calculation            
                 center_part(aero_grav_center, center_width, center_length, center_height, shape_only_mode = true);  
               } 
@@ -272,7 +280,7 @@ module fuselage_transition(x_offset, overlap_length = 15, up = true) {
 }
 
 
-// if fuselage_mode == true => magnet for fuselage, if fuselage_mode == false => magnet for cetner part
+// if fuselage_mode == true => magnet for fuselage, if fuselage_mode == false => magnet for center part
 module all_magnet(magnet_dim, fuselage_mode = true) {
     
     
@@ -303,7 +311,7 @@ module all_magnet(magnet_dim, fuselage_mode = true) {
 }
 
 
-//screw_clearance_hole parameter is used for create hole in center part to insert screws
+// if fuselage_mode == true => magnet for fuselage, if fuselage_mode == false => magnet for center part
 module fuselage_magnet(x_pos, z_offset = 0, magnet_dim, shell_scale, fuselage_mode) {
 
     
@@ -316,8 +324,9 @@ module fuselage_magnet(x_pos, z_offset = 0, magnet_dim, shell_scale, fuselage_mo
             rotate([-90,0,0])
                 difference(){
 
-                    linear_extrude(h=magnet_dim[2]*shell_scale*3, center=false)
-                        square([magnet_dim[0]*shell_scale,magnet_dim[1]*shell_scale], center = true, $fn=50);   
+                    translate([0, -2*magnet_dim[2]/3, 0])
+                        linear_extrude(h=magnet_dim[2]*shell_scale*3, center=false)
+                            square([magnet_dim[0]*shell_scale,magnet_dim[1]*shell_scale], center = true, $fn=50);   
                     
 
                     // Screw clearance hole
@@ -927,12 +936,24 @@ module rear_motor_cable_passage (){
         rotate([0,90,0])
             cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50);  
             
-        translate([-cable_passage_length/2,0,0])
+     /*   translate([-cable_passage_length/2,0,0])
             rotate([0,0,90])
                 rotate([0,90,0])
                     cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
-
+*/
     }
+    
+    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2  ,-3*center_width/4]) {
+    
+        rotate([0,90,0])
+            cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50);  
+            
+       /* translate([-cable_passage_length/2,0,0])
+            rotate([0,0,90])
+                rotate([0,90,0])
+                    cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); */
+
+    }    
 }
 
 
@@ -940,7 +961,7 @@ module rear_motor_screw_removal(){
 
     screw_position = 6.5;
     srew_hole_length = rear_motor_square_support_attach_width*2;
-    z_screw_position_offset = 5.5;
+    z_screw_position_offset = rear_motor_screw_distance/2;
 
     
     translate([center_length -main_stage_x_offset- srew_hole_length,main_stage_y_width-center_height/2  ,-center_width/2])
@@ -980,7 +1001,21 @@ module rear_motor_screw_removal(){
 
 }
 
+//Module use for remove part from rear motor fuselage
+module rear_fuselage_block_grid(rear_offset = 2) {
 
+
+    diameter = rear_motor_screw_distance+3*rear_motor_int_circ_attach_dist_to_ct/4;
+    length = 10;
+    
+
+    translate([L_total -main_stage_x_offset - rear_offset + length/2,main_stage_y_width-center_height/2 + diameter/4,-center_width/2])  
+        
+        rotate([0,90,0])
+            cylinder(h = length,d = diameter, center = true);
+
+
+}
 
  
 

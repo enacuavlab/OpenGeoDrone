@@ -50,18 +50,23 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 // Add hole to fix battery in ct part : OK
 // Pb vis à mettre + à l'intérieur -> fit pas pour emboitement fuselage sup : OK
 // check vis support fixation bottom fuselage :OK
-// Pb magnet fixation upper fuselage plus profond + taille magnet profondeur rentre pas
-// Rear ct part to grid
+// Pb magnet fixation upper fuselage plus profond + taille magnet profondeur rentre pas : OK
+// Rear ct part to grid : OK
 
 
-// Transition avant uniquement sur le dessus
-// pitot trop long + diametre incorrect
-// augmenter hauteur fuselage superieur passage batterie 
+// Transition avant uniquement sur le dessus : OK
+// pitot trop long + diametre incorrect : OK
+// augmenter hauteur fuselage superieur passage batterie : OK
 // Nozzle transition
 
 
 // Arm + center + fuselage => angle pitch comp
 // Rear motor pitch or not ?
+
+// A l'Impression :
+// Test magnet insert
+// test pitot rad and length
+// test battery insertion
 
 
 //Later :
@@ -103,8 +108,9 @@ Rear_motor_part = false;
 Clamp_fixation_big = false;
 Clamp_fixation_small = false;
 Fuselage_front_part = false;
-Fuselage_bottom_back_part = true;
-Fuselage_upper_back_part = false;
+Fuselage_bottom_back_part = false;
+Fuselage_upper_part = false;
+Full_fuselage = true;
 
 //**************** Quality settings **********//
 draft_quality = false;
@@ -189,7 +195,7 @@ esc_x_offset_pos = 25;
 
 fuselage_x_offset = center_length/4;
 fuselage_z_offset = center_width/2;
-nozzle_length = 35;
+nozzle_length = 50;//35;
 tail_length = 45;
 L_total = center_length - main_stage_x_offset+ fuselage_x_offset - tail_length;//300;          // fuselage length
 fuselage_mid_cut =L_total / 2 - fuselage_x_offset; //Plan used to cut the fuselage in two
@@ -199,13 +205,16 @@ D_max   = center_width*0.6;           // max center diameter
 D_tail  = center_width*0.8;           // final diameter
 num       = 100;            // sections numbers (+ = smoother)
 fuselage_ellipse_param = [7,4.8]; //Super ellipse fuselage shape parameter [x,y]
-fuselage_scale_y = 1.25;
+fuselage_scale_y = 1.8;//1.25; //Parameter use for scaling the fuselage on Y axis
+//Aeration Parameters
 aeration_width = 10;
 aeration_length = 20;
+x1_aeration = 45;
+x2_aeration =3*center_length/4; 
 //Fuselage screws position
 fuselage_screw_radius = 1.6;
 x1_fuselage_screw = -10;
-z1_fuselage_screw = -5;
+z1_fuselage_screw = -3;
 z_fuselage_all_screw = -3;
 x2_fuselage_screw = 21;
 x3_fuselage_screw = 84;
@@ -213,15 +222,18 @@ x4_fuselage_screw = 165;
 //Fuselage and center part magnet position
 x1_fuselage_magnet = 30;
 x2_fuselage_magnet = 156;
-magnet_dimension = [5,5,1];
+magnet_dimension = [5.5,5.5,2];
 z1_offset_magnet = -7;
 z2_offset_magnet = -6;
-pitot_radius = 2;
+pitot_radius = 2.5;
+pitot_length = 15;
 // === Grid Parameters ===
 slot_width    = 2.5;     
 slot_spacing  = 18;     
 grid_angle    = 45;  
 grid_z_offset =20;
+//Rear motor screw separation
+rear_motor_screw_distance = 11;
 //******//
 
 
@@ -816,14 +828,17 @@ module center_part_main(aero_grav_center, ct_width, ct_length, ct_height) {
             all_fuselage_screws(screw_clearance_hole = true); 
        
             //we make room for rear motor cable 
-            rear_motor_cable_passage ();     
+            rear_motor_cable_passage ();    
+           
+            //We remove part to get smthg lighter and more aeration
+            //rear_fuselage_block_grid();  
             
             }//End difference  
             CreateFuselage(fuselage_ellipse_param); 
         }//End Intersection
         
         //We remove the very end of fuselage to get the room for the fuselage tail block
-        rear_fuselage_block (aero_grav_center);
+        rear_fuselage_block (aero_grav_center, hole = true);
         //magnet for center part
         all_magnet(magnet_dimension,fuselage_mode = false);   
     }//End if
@@ -864,22 +879,22 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 tail_fuselage();
             
             //We Draw holes for aeration
-            translate([0,-ct_height,-3.5*center_width/5])
+            translate([x1_aeration,-ct_height,-3.5*center_width/5])
                 rotate([90,0,0])
                     aeration_fuselage();
 
-            translate([0,3*ct_height/2,-3.5*center_width/5])
+            translate([x1_aeration,3*ct_height/2,-3.5*center_width/5])
                 rotate([90,0,0])
                     aeration_fuselage();  
 
-            translate([3*ct_length/4,-ct_height,-3.5*ct_width/5])
+            translate([x2_aeration,-ct_height,-3.5*ct_width/5])
                 rotate([90,0,0])
                     aeration_fuselage(flip=true);
                 
-            translate([3*ct_length/4,3*ct_height/2,-1.5*ct_width/5])
+            translate([x2_aeration,3*ct_height/2,-1.5*ct_width/5])
                 rotate([90,0,0])
                     aeration_fuselage(flip=true);                     
-                
+       
 
             render()
                 union(){
@@ -911,7 +926,7 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 rear_fuselage_block (aero_grav_center);
                 
                 //We draw hole for pitot tube insertion
-                Create_pitot(pitot_radius, outside_diameter = false);
+                Create_pitot(pitot_radius, pitot_length, outside_diameter = false);
                 
             }//End of 1st difference
             
@@ -923,7 +938,7 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
         }//End of union 
         
         
-        if(Fuselage_front_part && Full_system == false)   
+        if(Fuselage_front_part && Full_system == false && Full_fuselage == false)   
             union() {
             translate([-500+fuselage_mid_cut,-500,0])
                 cube([1000,1000,1000], center=true);
@@ -932,11 +947,11 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 cube([1000,1000,1000], center=true);
                 }
 
-        if(Fuselage_bottom_back_part && Full_system == false)   
+        if(Fuselage_bottom_back_part && Full_system == false && Full_fuselage == false)   
             translate([500+fuselage_mid_cut,-500,0])
                 cube([1000,1000,1000], center=true);                
 
-        if(Fuselage_upper_back_part && Full_system == false)   
+        if(Fuselage_upper_part && Full_system == false && Full_fuselage == false)   
             translate([500+x1_fuselage_screw-3,500,0])
                 cube([1000,1000,1000], center=true);  
                 
@@ -944,7 +959,7 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
     
 
         //We add overlapping transition between part 
-        if(Fuselage_upper_back_part) {
+        if(Fuselage_upper_part || Full_fuselage) {
             fuselage_up_front_transition(aero_grav_center, x1_fuselage_screw, overlap_length = 15);
             //magnet for fuselage
             all_magnet(magnet_dimension,fuselage_mode = true); 
@@ -956,8 +971,8 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
             
             
         //We draw outside diameter for pitot tube insertion
-        if(Fuselage_front_part || Full_system) 
-            Create_pitot(pitot_radius);
+        if(Fuselage_front_part || Full_system || Full_fuselage) 
+            Create_pitot(pitot_radius, pitot_length);
             
 
 }
@@ -1021,7 +1036,7 @@ else
     center_part_main(aero_grav_center, center_width, center_length, center_height);
 
     //**************** Fuselage part **********//
-    if(Fuselage_front_part || Fuselage_bottom_back_part || Fuselage_upper_back_part || Full_system) fuselage_main(aero_grav_center, center_width, center_length, center_height);  
+    if(Fuselage_front_part || Fuselage_bottom_back_part || Fuselage_upper_part || Full_system || Full_fuselage) fuselage_main(aero_grav_center, center_width, center_length, center_height);  
     
     //**************** Servo horn **********//    
     if((Left_side && Servo_horn) || Full_system) servo_horn_main();
@@ -1084,6 +1099,9 @@ else
     
 
 
-
 } //End if main
+
+
+
+
 

@@ -25,7 +25,7 @@ CENTER_PARTS=(
   Clamp_fixation_small
   Fuselage_front_part
   Fuselage_bottom_back_part
-  Fuselage_upper_back_part
+  Fuselage_upper_part
 )
 
 
@@ -59,7 +59,8 @@ for side in "${SIDES[@]}"; do
       Clamp_fixation_small = false; 
       Fuselage_front_part = false; 
       Fuselage_bottom_back_part = false;
-      Fuselage_upper_back_part = false; 
+      Fuselage_upper_part = false; 
+      Full_fuselage = false;
       draft_quality = false;
       ${part}=true;
     " "$SRC"
@@ -90,7 +91,8 @@ for part in "${CENTER_PARTS[@]}"; do
       Clamp_fixation_small = false; 
       Fuselage_front_part = false; 
       Fuselage_bottom_back_part = false;
-      Fuselage_upper_back_part = false; 
+      Fuselage_upper_part = false; 
+      Full_fuselage = false;
       draft_quality = false;
       ${part}=true;
   " "$SRC"
