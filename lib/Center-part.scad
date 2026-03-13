@@ -11,140 +11,234 @@ radius = 3;         // Radius of rounded corners
 
 gravity_line_width = 1;
 gravity_line_height = 0.2;
-// ------------------------
-// FUSELAGE GENERATOR
-// ------------------------
-module CreateFuselage(fuse_ellipse_param) {
 
-    s = fuselage_sections();
+// ============================================================
+//  FUSELAGE GENERATOR — C1 Quintic Bézier
+// ============================================================
+//
+//  LONGITUDINAL PROFILE (side view)
+//
+//        R_max (= center_width/2)
+//          |
+//  P2 ·   |     · P3
+//         ***
+//       **   **
+//      *       *        * P4
+//  P1 *         *      *
+//    *            ****
+//  P0*                 *P5
+//  |noze|...body...|queue|
+//  t=0                    t=1
+//
+//  Control points layout:
+//    P0 = R_front                          (nose radius)
+//    P1 = P0 + P1_factor*(R_max-R_front)   (controls nose slope → C1)
+//    P2 = P0 + P2_factor*(R_max-R_front)   (controls rise speed)
+//    P3 = R_tail + P3_factor*(R_max-R_tail) (controls descent)
+//    P4 = R_tail + P4_factor*(R_max-R_tail) (controls tail slope → C1)
+//    P5 = R_tail + P5_factor*(R_max-R_tail) (tail radius)
+//
+//  C1 continuity:
+//    B'(0) = 5*(P1-P0) → smooth nose if P1 close to P0
+//    B'(1) = 5*(P5-P4) → smooth tail if P4 close to P5
+//
+//  Normalization:
+//    The curve is scaled so that max(R(t)) = R_max = center_width/2
+//    regardless of control point values. Uses 500-sample search.
+//
+//  CROSS SECTION (front view)
+//
+//        ry
+//      ------
+//     /      \
+//    |   rx   |   super-ellipse: |x/rx|^n + |y/ry|^n = 1
+//     \      /    n=2 → ellipse, n=4 → rounded rect, n→∞ → rectangle
+//      ------
+//
+//  fuselage_ellipse_param = [nx, ny] controls cross-section shape
+//  ry = rx * fuselage_scale_y  (constant flattening ratio)
+//
+// ============================================================
 
-    //Main fuselage part
-    translate([-fuselage_x_offset,0,-fuselage_z_offset])
-        rotate([0,90,0]){
-            bubble_bezier_fit_superellipse(length=nozzle_length, rx=s[0][1], ry=s[0][2], fuse_ellipse_param);
-            for(i = [0 : len(s)-2]) {
+// --- Global parameters (defined externally) ---
+// nozzle_length, tail_length, L_total  → fuselage_length
+// center_width                         → max fuselage diameter
+// num                                  → number of frames (smoothness)
+// nozzle_length, fuselage_z_offset → position
+// fuselage_scale_y                     → vertical flattening ratio
+// fuselage_ellipse_param               → super-ellipse exponents [nx, ny]
+
+
+
+// --- Bézier control point factors ---
+// Each factor is in [0,1]: 0 = at R_front/R_tail, 1 = at R_max
+// Tune these to change the fuselage shape
+P1_factor = 0.9;   // nose tangent — higher = steeper nose rise
+P2_factor = 0.6;   // rise speed  — higher = faster widening
+P3_factor = 0.85;  // descent     — higher = wider body kept longer
+P4_factor = 0.85;  // tail tangent — higher = slower tail taper
+P5_factor = 0.2;   // tail exit   — controls tail radius blending
+
+
+
+// ============================================================
+//  Quintic Bézier — value and derivative
+// ============================================================
+
+function bezier5(t, p0,p1,p2,p3,p4,p5) =
+      pow(1-t,5)*p0
+    + 5*pow(1-t,4)*t*p1
+    + 10*pow(1-t,3)*pow(t,2)*p2
+    + 10*pow(1-t,2)*pow(t,3)*p3
+    + 5*(1-t)*pow(t,4)*p4
+    + pow(t,5)*p5;
+
+function bezier5_deriv(t, p0,p1,p2,p3,p4,p5) =
+    5*(
+          pow(1-t,4)        * (p1-p0)
+        + 4*pow(1-t,3)*t    * (p2-p1)
+        + 6*pow(1-t,2)*t*t  * (p3-p2)
+        + 4*(1-t)*pow(t,3)  * (p4-p3)
+        + pow(t,4)          * (p5-p4)
+    );
+
+// ============================================================
+//  Numerical max search over N samples (recursive)
+//  Used to normalize the curve so max(R) = R_max exactly
+// ============================================================
+
+function _bz5_max(p0,p1,p2,p3,p4,p5, i, n, cur) =
+    i > n ? cur :
+    _bz5_max(p0,p1,p2,p3,p4,p5, i+1, n,
+        max(cur, bezier5(i/n, p0,p1,p2,p3,p4,p5)));
+
+function bz5_max(p0,p1,p2,p3,p4,p5, n=500) =
+    _bz5_max(p0,p1,p2,p3,p4,p5, 0, n, p0);
+
+// ============================================================
+//  Section generation [z, rx, ry]
+//  The curve is scaled so that max(rx) = R_max = center_width/2
+// ============================================================
+function fuselage_sections(bz5_P0, bz5_P1, bz5_P2, bz5_P3, bz5_P4, bz5_P5) =
+    let(
+        p0 = bz5_P0, p1 = bz5_P1, p2 = bz5_P2,
+        p3 = bz5_P3, p4 = bz5_P4, p5 = bz5_P5,
+        raw_max = bz5_max(p0,p1,p2,p3,p4,p5),
+        scale   = R_max / raw_max
+    )
+    [ for(i = [0 : num])
+        let(
+            t  = i / num,
+            z  = t * fuselage_length,
+            R  = scale * bezier5(t, p0,p1,p2,p3,p4,p5),
+            rx = R,
+            ry = R * fuselage_scale_y
+        )
+        [z, rx, ry]
+    ];
+
+// ============================================================
+//  Frame — anisotropic super-ellipse cross-section
+// ============================================================
+
+module frame(z, rx, ry, n=[4,4]) {
+    hull_width = 0.00001;
+    steps      = 100;
+    translate([0, 0, z])
+        linear_extrude(h=hull_width, center=false)
+            polygon(points=[
+                for(i = [0 : steps-1])
+                    let(
+                        a  = 360 * i / steps,
+                        ca = cos(a),
+                        sa = sin(a),
+                        x  = rx * sign(ca) * pow(abs(ca), 2/n[0]),
+                        y  = ry * sign(sa) * pow(abs(sa), 2/n[1])
+                    )
+                    [x, y]
+            ]);
+}
+
+// ============================================================
+//  Fuselage assembly — hull between consecutive frames
+// ============================================================
+
+module fuselage() {
+
+    // --- Raw control points (before normalization) ---
+    bz5_P0 = R_front;
+    bz5_P1 = R_front + P1_factor * (R_max - R_front);
+    bz5_P2 = R_front + P2_factor * (R_max - R_front);
+    bz5_P3 = R_tail  + P3_factor * (R_max - R_tail);
+    bz5_P4 = R_tail  + P4_factor * (R_max - R_tail);
+    bz5_P5 = R_tail  + P5_factor * (R_max - R_tail);
+    
+    s = fuselage_sections(bz5_P0, bz5_P1, bz5_P2, bz5_P3, bz5_P4, bz5_P5);
+    translate([-nozzle_length, 0, -fuselage_z_offset])
+        rotate([0, 90, 0])
+            for(i = [0 : len(s)-2])
                 hull() {
-                    frame(s[i][0],   s[i][1], s[i][2],fuse_ellipse_param);
-                    frame(s[i+1][0], s[i+1][1], s[i+1][2],fuse_ellipse_param);
+                    frame(s[i][0],   s[i][1],   s[i][2],   fuselage_ellipse_param);
+                    frame(s[i+1][0], s[i+1][1], s[i+1][2], fuselage_ellipse_param);
                 }
-            }
-        }
-        
-        
-        
-        // *** HULL from the FUSELAGE to TAIL *** //
-        //tail fuselage part, here we need to hull from the end of fuselage to tail of fuselage
-        hull() {
-            translate([-fuselage_x_offset,0,-fuselage_z_offset])
-                rotate([0,90,0])
-                    frame(s[len(s)-1][0], s[len(s)-1][1], s[len(s)-1][2],fuse_ellipse_param);
-            tail_fuselage();
-        }//End of hull FUSELAGE TO TAIL
-        
-        
+}
+
+// ============================================================
+//  Fuselage hulled — hull with wings, rear motor
+// ============================================================
+
+module hulled_fuselage() {
+
+    // *** HULL  *** //
+    hull() {
+    
+        render() // Use for simplification for calculation
+        fuselage();
         
         
         // *** HULL from the FUSELAGE to WINGS LEFT PART *** //
-        hull() {
-            
-            union(){
-            //Main fuselage part
-            translate([-fuselage_x_offset,0,-fuselage_z_offset])
-                rotate([0,90,0]){
-                    for(i = [0 : len(s)-2]) {
-                        hull() {
-                            frame(s[i][0],   s[i][1], s[i][2],fuse_ellipse_param);
-                            frame(s[i+1][0], s[i+1][1], s[i+1][2],fuse_ellipse_param);
-                        }
-                    }
-                }
+        intersection(){//We keep a wingshell slice 
+            render() // Use for simplification for calculation
+            wing_shell();
+            translate([-2*wing_root_chord_mm,-2500,0])
+                cube([4*wing_root_chord_mm,5000,0.0001]);
+        }//End of intersection
         
-                //tail fuselage part, here we need to hull from the end of fuselage to tail of fuselage
-        hull() {
-            translate([-fuselage_x_offset,0,-fuselage_z_offset])
-                rotate([0,90,0])
-                    frame(s[len(s)-1][0], s[len(s)-1][1], s[len(s)-1][2],fuse_ellipse_param);
-            tail_fuselage();
-        }//End of hull
-        }
-             intersection(){//We keep a wingshell slice 
-                    wing_shell();
-                    translate([-2*wing_root_chord_mm,-2500,0])
-                            cube([4*wing_root_chord_mm,5000,0.0001]);
-             }
 
-        }//End of hull FUSELAGE TO WINGS
-
-        // *** HULL from the FUSELAGE to WINGS RIGHT PART *** //        
+        // *** HULL from the FUSELAGE to WINGS LEFT PART *** //
         mirror([0, 0, 1]) 
-            translate([0, 0, center_width]){
-            
-        hull() {
-            
-            union(){
-            //Main fuselage part
-            translate([-fuselage_x_offset,0,-fuselage_z_offset])
-                rotate([0,90,0]){
-                    for(i = [0 : len(s)-2]) {
-                        hull() {
-                            frame(s[i][0],   s[i][1], s[i][2],fuse_ellipse_param);
-                            frame(s[i+1][0], s[i+1][1], s[i+1][2],fuse_ellipse_param);
-                        }
-                    }
-                }
-        
-                //tail fuselage part, here we need to hull from the end of fuselage to tail of fuselage
-        hull() {
-            translate([-fuselage_x_offset,0,-fuselage_z_offset])
-                rotate([0,90,0])
-                    frame(s[len(s)-1][0], s[len(s)-1][1], s[len(s)-1][2],fuse_ellipse_param);
-            tail_fuselage();
-        }//End of hull
-        }
-             intersection(){//We keep a wingshell slice 
+            translate([0, 0, center_width])
+                intersection(){//We keep a wingshell slice 
+                    render() // Use for simplification for calculation
                     wing_shell();
                     translate([-2*wing_root_chord_mm,-2500,0])
-                            cube([4*wing_root_chord_mm,5000,0.0001]);
-             }
-
-        }//End of hull FUSELAGE TO WINGS
-            
-            
-            
-            
-            }//End of translate
+                        cube([4*wing_root_chord_mm,5000,0.0001]);
+                }//End of intersection
         
-
-
-
-}
-
-module tail_fuselage(){
-
-    hull_width = 0.00000001;
-    poly_size = rear_motor_square_support_attach_length_y/2; //Size of original rear motor support square
-    hexa_factor = 2.5; //extension on sides of the hexagon
-    polygon_points = [[poly_size, -poly_size], [-poly_size, -poly_size],[-hexa_factor*poly_size, -0], [-poly_size, poly_size],[poly_size, poly_size], [hexa_factor*poly_size, 0]]; // Points of polygon
-
-    translate([center_length -main_stage_x_offset,main_stage_y_width-center_height/2 +center_part_y_offset ,-center_width/2]) {
-        rotate([0,90,0]) {
         
-            linear_extrude(h=hull_width)
-                offset(r=6)
-                    offset(delta=-6)
-                        polygon(points=polygon_points);
-                
-        }//End of rotate
-    }//End of translate
+        
+    }//End of hull
 }
 
 
 
-//Module for pitot tube creation
+
+
+// ------------------------
+// FUSELAGE MODIFICATIONS
+// ------------------------  
+
+
+// ============================================================
+//  Create_pitot — Module for pitot tube creation
+// ============================================================
 //outside_diameter == true => outside diameter drawing for fuselage
 //outside_diameter == false => make hole inside outside diameter for pitot tube insertion
 module Create_pitot(pitot_rad, pitot_len, outside_diameter = true) {
 
+
+    pitot_translation = [-nozzle_length + pitot_len/2,0,-center_width/2];
+    
     if(outside_diameter == true){
     
     difference() {
@@ -152,14 +246,14 @@ module Create_pitot(pitot_rad, pitot_len, outside_diameter = true) {
         intersection() {
             
             render(convexity=5) // Use for simplification for calculation
-                CreateFuselage(fuselage_ellipse_param);
+                hulled_fuselage();
            
-            translate([-fuselage_x_offset-nozzle_length+pitot_len/2,0,-center_width/2])
+            translate(pitot_translation)
                 rotate([0,90,0])
                     cylinder(h=pitot_len, r=2*pitot_rad, center = true, $fn=50);       
         }//End intersection
     
-        translate([-fuselage_x_offset-nozzle_length+pitot_len/2,0,-center_width/2])
+        translate(pitot_translation)
         rotate([0,90,0])
         cylinder(h=2*pitot_len, r=pitot_rad, center = true, $fn=50); 
         
@@ -169,7 +263,7 @@ module Create_pitot(pitot_rad, pitot_len, outside_diameter = true) {
     
     if(outside_diameter == false){
 
-        translate([-fuselage_x_offset-nozzle_length+pitot_len/2,0,-center_width/2])
+        translate(pitot_translation)
             rotate([0,90,0])
                 cylinder(h=2*pitot_len, r=pitot_rad, center = true, $fn=50);       
         
@@ -179,42 +273,18 @@ module Create_pitot(pitot_rad, pitot_len, outside_diameter = true) {
 
 
 
-//Module to create a overlapp between bottom and to front to get a nice fuselage transition between part
-module fuselage_bottom_front_transition(aero_grav_center, x_offset, overlap_length = 15) {
-
-    coordinate_to_origin = [-x_offset,0,center_width/2];
-
- 
-        difference(){
-            
-            
-                translate(-coordinate_to_origin) 
-                    scale(0.98) 
-                        translate(coordinate_to_origin) 
-                            fuselage_transition(x_offset, overlap_length, up = false);
-                            
-                translate(-coordinate_to_origin) 
-                    scale(0.96) 
-                        translate(coordinate_to_origin) 
-                            fuselage_transition(x_offset, overlap_length+2, up = false);  
-  
-            render() // Use for simplification for calculation            
-                center_part(aero_grav_center, center_width, center_length, center_height, shape_only_mode = true);  
-              } 
-              
-}
-
-
-//Module used to create a small block at the end of the center part to stop the fuselage
+// ============================================================
+//  rear_fuselage_block — Module used to create a small block at the end of the center part to stop the fuselage
+// ============================================================
 //Hole parameter is used when we draw the part to activate a hole drawing in the middle
 module rear_fuselage_block (aero_grav_center, rear_offset = 2, hole = false) {
 
-    cube_position = L_total- main_stage_x_offset - rear_offset;
+    cube_position = L_total- nozzle_length - rear_offset;
     difference() {
     
         intersection() {
             render() // Use for simplification for calculation
-                CreateFuselage(fuselage_ellipse_param);  
+                hulled_fuselage();  
 
             translate([500+cube_position,500,0])
                 cube([1000,1000,1000], center=true);                
@@ -233,7 +303,9 @@ module rear_fuselage_block (aero_grav_center, rear_offset = 2, hole = false) {
 }
 
 
-//Module to create a overlapp between upper and to front to get a nice fuselage transition between part
+// ============================================================
+//  fuselage_up_front_transition — Module to create a overlapp between upper and to front to get a nice fuselage transition between part
+// ============================================================    
 module fuselage_up_front_transition(aero_grav_center, x_offset, overlap_length = 15) {
 
     coordinate_to_origin = [-x_offset,0,center_width/2];
@@ -262,12 +334,46 @@ module fuselage_up_front_transition(aero_grav_center, x_offset, overlap_length =
               
 }
 
+
+
+
+// ============================================================
+//  fuselage_bottom_front_transition — Module to create a overlapp between bottom and to front to get a nice fuselage transition between part
+// ============================================================
+module fuselage_bottom_front_transition(aero_grav_center, x_offset, overlap_length = 15) {
+
+    coordinate_to_origin = [-x_offset,0,center_width/2];
+
+ 
+        difference(){
+            
+            
+                translate(-coordinate_to_origin) 
+                    scale(0.98) 
+                        translate(coordinate_to_origin) 
+                            fuselage_transition(x_offset, overlap_length, up = false);
+                            
+                translate(-coordinate_to_origin) 
+                    scale(0.96) 
+                        translate(coordinate_to_origin) 
+                            fuselage_transition(x_offset, overlap_length+2, up = false);  
+  
+            render() // Use for simplification for calculation            
+                center_part(aero_grav_center, center_width, center_length, center_height, shape_only_mode = true);  
+              } 
+              
+}
+
+
+// ============================================================
+//  fuselage_transition — Tool module for fuselage top and bottom transition 
+// ============================================================  
 module fuselage_transition(x_offset, overlap_length = 15, up = true) {
 
     intersection(){
 
         render() // Use for simplification for calculation
-            CreateFuselage(fuselage_ellipse_param);
+            hulled_fuselage();
         
             if(up == true)
                 translate([x_offset,500,0])
@@ -280,6 +386,9 @@ module fuselage_transition(x_offset, overlap_length = 15, up = true) {
 }
 
 
+// ============================================================
+//  all_magnet — Tool module for magnet drawing 
+// ============================================================  
 // if fuselage_mode == true => magnet for fuselage, if fuselage_mode == false => magnet for center part
 module all_magnet(magnet_dim, fuselage_mode = true) {
     
@@ -290,7 +399,7 @@ module all_magnet(magnet_dim, fuselage_mode = true) {
         intersection() {
         
         render(convexity=5) // Use for simplification for calculation
-        CreateFuselage(fuselage_ellipse_param);
+        hulled_fuselage();
             union() {
             
             fuselage_magnet(x1_fuselage_magnet, z_offset = z1_offset_magnet, magnet_dim, shell_scale, fuselage_mode);
@@ -310,7 +419,9 @@ module all_magnet(magnet_dim, fuselage_mode = true) {
         
 }
 
-
+// ============================================================
+//  fuselage_magnet — Tool module for magnet drawing 
+// ============================================================  
 // if fuselage_mode == true => magnet for fuselage, if fuselage_mode == false => magnet for center part
 module fuselage_magnet(x_pos, z_offset = 0, magnet_dim, shell_scale, fuselage_mode) {
 
@@ -352,6 +463,10 @@ module fuselage_magnet(x_pos, z_offset = 0, magnet_dim, shell_scale, fuselage_mo
         
 }
 
+
+// ============================================================
+//  all_fuselage_screws — Tool module for fuselage screw drawing 
+// ============================================================  
 module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
     
     if(screw_clearance_hole == false) {
@@ -359,7 +474,7 @@ module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
         intersection() {
         
         render(convexity=5) // Use for simplification for calculation
-        CreateFuselage(fuselage_ellipse_param);
+        hulled_fuselage();
             union() {
             
             fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw);
@@ -396,7 +511,9 @@ module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
     }
 }
 
-
+// ============================================================
+//  fuselage_screw — Tool module for fuselage screw drawing 
+// ============================================================ 
 //screw_clearance_hole parameter is used for create hole in center part to insert screws
 module fuselage_screw(x_pos, z_offset = 0, boss_height = 10, screw_clearance_hole = false) {
 
@@ -435,6 +552,33 @@ module fuselage_screw(x_pos, z_offset = 0, boss_height = 10, screw_clearance_hol
         
 }
 
+// ============================================================
+//  full_aeration_fuselage — Tool module for fuselage aeration drawing 
+// ============================================================ 
+module full_aeration_fuselage(x1_aera, x2_aera, ct_width, ct_height) {
+
+            //We Draw holes for aeration
+            translate([x1_aera,-ct_height,-3.5*ct_width/5])
+                rotate([90,0,0])
+                    aeration_fuselage();
+
+            translate([x1_aera,3*ct_height/2,-3.5*ct_width/5])
+                rotate([90,0,0])
+                    aeration_fuselage();  
+
+            translate([x2_aera,-ct_height,-3.5*ct_width/5])
+                rotate([90,0,0])
+                    aeration_fuselage(flip=true);
+                
+            translate([x2_aera,3*ct_height/2,-1.5*ct_width/5])
+                rotate([90,0,0])
+                    aeration_fuselage(flip=true);  
+
+}
+
+// ============================================================
+//  aeration_fuselage — Tool module for fuselage aeration drawing 
+// ============================================================ 
 module aeration_fuselage(flip = false) {
     
     base = aeration_width;
@@ -455,115 +599,7 @@ module aeration_fuselage(flip = false) {
                 rotate([0,0,90])
                     linear_extrude(h=thickness, center = true)
                         polygon(points=triangle_points);                    
-}
-
-
-
-
-
-function fuselage_sections() = 
-    [ for(i = [0 : num]) 
-        let(
-            t = i/num,                              // progression 0 → 1
-            z = t * L_total,                      // position on length
-            // Shape law: "water drop"
-            // rapid rise -> plateau -> slow descent
-            //k = sin(t*180),                       // smooth aerodynamic shape
-            //D = D_front*(1-t) + D_max*k*(1-t/1.2) + D_tail*t  // tapered interpolation
-            D = bezier1D(t,
-             D_front,
-             D_front + 0.6*D_max,
-             D_tail + 0.6*D_max,
-             D_tail)
-        )
-        [z, D/2, D*0.75/2 * fuselage_scale_y]                        // rx, ry elliptical axes
-    ];
-
-
-
-    
-// frame super-ellipse generalised / anisotrope (rounded rectangle)
-module frame(z, rx, ry, n = [4,4]){
-
-    hull_width = 0.00000001;
-    steps = 100;
-
-    translate([0,0,z])
-        linear_extrude(h=hull_width, center=false)
-            polygon(points = [
-                for (i = [0:steps-1])
-                    let(
-                        a = 360 * i/steps,
-                        ca = cos(a),
-                        sa = sin(a),
-
-                        x = rx * sign(ca) * pow(abs(ca), 2/n[0]),
-                        y = ry * sign(sa) * pow(abs(sa), 2/n[1])
-                    )
-                    [x, y]
-            ]);
-}
-
-
-
-function bezier1D(t,p0,p1,p2,p3) =
-    (1-t)*(1-t)*(1-t)*p0 +
-    3*(1-t)*(1-t)*t*p1 +
-    3*(1-t)*t*t*p2 +
-    t*t*t*p3;
-    
-
-
-module bubble_bezier_fit_superellipse(length, rx, ry, n = [4,4]){
-
-    
-    P0 = [0,1];
-    P1 = [-0.05,1];
-    P2 = [-0.75,0.55];
-    P3 = [-1,0];
-
-    function bezier(t,p0,p1,p2,p3) =
-        (1-t)*(1-t)*(1-t)*p0 +
-        3*(1-t)*(1-t)*t*p1 +
-        3*(1-t)*t*t*p2 +
-        t*t*t*p3;
-
-    steps = 40;
-
-    // Section Generation
-    sections = [
-        for(i=[0:steps])
-            let(
-                t = i/steps,
-                p = bezier(t,P0,P1,P2,P3),
-                z = p[0] * length,
-                scale_factor = p[1]
-            )
-            [z, rx*scale_factor, ry*scale_factor]
-    ];
-
-    // Loft progressive
-    for(i=[0:len(sections)-2]){
-        hull(){
-            frame(
-                sections[i][0],
-                sections[i][1],
-                sections[i][2],
-                n
-            );
-            frame(
-                sections[i+1][0],
-                sections[i+1][1],
-                sections[i+1][2],
-                n
-            );
-        }
-    }
-}
-
-  
-    
-    
+}    
 
 // ------------------------
 // CENTER PART
@@ -1112,199 +1148,3 @@ module void_battery_holder(ct_width, ct_length, ct_height){
 
 } 
  
-//bubble_bezier_fit_elliptic(length=nozzle_length, rx=s[0][1], ry=s[0][2]);
-/*    
-module bubble_bezier_fit_elliptic(length, rx, ry) {
-    // rx = X semi-axis of the first fuselage section
-    // ry = Y semi-axis of the first fuselage section
-
-    // 2D normalized profile (radius = 1)
-    P0 = [0,1];                   // start of the connection
-    P1 = [-0.3, 1.02];            // slightly wider bubble just after the start
-    P2 = [-0.8, 0.3];             // gradual tapering
-    P3 = [-1, 0];                  // nose tip
-
-    // Cubic Bézier function
-    function bezier(t,p0,p1,p2,p3) = 
-        (1-t)*(1-t)*(1-t)*p0 +
-        3*(1-t)*(1-t)*t*p1 +
-        3*(1-t)*t*t*p2 +
-        t*t*t*p3;
-
-    // Sample the Bézier curve from t=0 to t=1
-    profile = [for(t=[0:0.01:1]) bezier(t,P0,P1,P2,P3)];
-
-    // Scale the profile to match the ellipse axes of the fuselage
-    translate([0,0,-0.01])   // slight offset to avoid z-fighting
-    scale([rx, ry, length])
-        rotate([0,180,0])
-            rotate_extrude($fn=160)
-                polygon(profile);
-}
-*/
- 
-                    /*frame(s[i][0],   s[i][1], s[i][2], s[i][3]);
-                    frame(s[i+1][0], s[i+1][1], s[i+1][2], s[i+1][3]);*/ 
-/*
-poly_size = rear_motor_square_support_attach_length_y/2; // taille du carré de base
-hexa_factor = 2.5;                                        // extensions pour hexagone
-hex_points = [[poly_size, -poly_size],
-              [-poly_size, -poly_size],
-              [-hexa_factor*poly_size, 0],
-              [-poly_size, poly_size],
-              [poly_size, poly_size],
-              [hexa_factor*poly_size, 0]]; // points de ton hexagone
-*/
- 
- 
-
-/*
-rx_tail = rear_motor_square_support_attach_length_z/2;
-ry_tail = rear_motor_square_support_attach_length_y/2;
-L_total_full = L_total + tail_length;
-tail_steps = 20;*/
-/*
-function fuselage_sections() =
-[
-    for(i = [0:num])
-        let(
-            t = i/num,
-            z = t * L_total,
-
-            // Bézier 1D pour diamètre
-            D = bezier1D(t,
-                         D_front,
-                         D_front + 0.6*D_max,
-                         D_tail,
-                         D_tail)
-        )
-        [z, D/2, D*0.75/2 * fuselage_scale_y],
-
-    // -------- Transition vers tail --------
-
-    for(i = [1:tail_steps])
-        let(
-            t = i/tail_steps,
-            z = L_total + t*tail_length,
-
-            rx = bezier1D(t,
-                          D_tail/2,
-                          D_tail/2,
-                          rx_tail,
-                          rx_tail),
-
-            ry = bezier1D(t,
-                          D_tail*0.75/2 *fuselage_scale_y,
-                          D_tail*0.75/2 *fuselage_scale_y,
-                          ry_tail,
-                          ry_tail)
-        )
-        [z, rx, ry]
-];
-*/
-
-//n_fuse = fuselage_ellipse_param;   // ex: [4,4]
-//n_tail = [40,40];              // approx hexagone
-/*
-function fuselage_sections() =
-[
-    // ----- FUSELAGE -----
-    for(i = [0:num])
-        let(
-            t = i/num,
-            z = t * L_total,
-
-            D = bezier1D(t,
-                         D_front,
-                         D_front + 0.6*D_max,
-                         D_tail,
-                         D_tail),
-
-            n_interp = n_fuse
-        )
-        [z, D/2, D*0.75/2 * fuselage_scale_y, n_interp],
-
-    // ----- TRANSITION VERS HEX -----
-    for(i = [1:tail_steps])
-        let(
-            t = i/tail_steps,
-            z = L_total + t*tail_length,
-
-            rx = bezier1D(t,
-                          D_tail/2,
-                          D_tail/2,
-                          rx_tail,
-                          rx_tail),
-
-            ry = bezier1D(t,
-                          D_tail*0.75/2 * fuselage_scale_y,
-                          D_tail*0.75/2 * fuselage_scale_y,
-                          ry_tail,
-                          ry_tail),
-
-            n_interp = [
-                bezier1D(t, n_fuse[0], n_fuse[0], n_tail[0], n_tail[0]),
-                bezier1D(t, n_fuse[1], n_fuse[1], n_tail[1], n_tail[1])
-            ]
-        )
-        [z, rx, ry, n_interp]
-];*/
-/*
-function fuselage_sections() =
-[
-    // ----- FUSELAGE -----
-    for(i=[0:num])
-        let(
-            t = i/num,
-            z = t*L_total,
-            D = bezier1D(t,D_front,D_front+0.6*D_max,D_tail,D_tail),
-            n_interp = fuse_ellipse_param,
-            shape = "super"
-        )
-        [z, D/2, D*0.75/2*fuselage_scale_y, n_interp, shape],
-
-    // ----- TRANSITION VERS HEX CUSTOM -----
-    for(i=[1:tail_steps])
-        let(
-            t = i/tail_steps,
-            z = L_total + t*tail_length,
-            rx = bezier1D(t,D_tail/2,D_tail/2,rx_tail,rx_tail),
-            ry = bezier1D(t,D_tail*0.75/2*fuselage_scale_y,D_tail*0.75/2*fuselage_scale_y,ry_tail,ry_tail),
-            n_interp = [bezier1D(t,fuse_ellipse_param[0],fuse_ellipse_param[0],20,20),
-                        bezier1D(t,fuse_ellipse_param[1],fuse_ellipse_param[1],20,20)],
-            shape = t < 0.5 ? "super" : "hex"
-        )
-        [z, rx, ry, n_interp, shape]
-];
-*/ 
-
-
-
-
-/*
-module frame(z, rx, ry, n=[4,4], shape="super") {
-    hull_width = 0.00000001;
-    steps = 100;
-
-    translate([0,0,z])
-        linear_extrude(h=hull_width, center=false)
-            if(shape=="super") {
-                polygon(points=[
-                    for(i=[0:steps-1])
-                        let(
-                            a = 360*i/steps,
-                            ca = cos(a),
-                            sa = sin(a),
-                            x = rx*sign(ca)*pow(abs(ca),2/n[0]),
-                            y = ry*sign(sa)*pow(abs(sa),2/n[1])
-                        )
-                        [x,y]
-                ]);
-                }
-            if(shape=="hex") {
-                polygon(points=[
-                    for(p=[for(pt = hex_points) pt])
-                        [p[0]*rx/poly_size, p[1]*ry/poly_size] // <--- Scale correct
-                ]);}
-}
-*/
