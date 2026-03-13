@@ -40,34 +40,6 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// reduire hauteur tawaki : OK
-// remove surépaisseur ESC fixation + facile impression : OK
-// Pb center part longerons outside ? : OK
-// Ventalation on sides : OK
-
-// Remove the fuselage on center part and add center part all side long : OK
-// Center part grid en croix + diminition matiere et poids : OK
-// Add hole to fix battery in ct part : OK
-// Pb vis à mettre + à l'intérieur -> fit pas pour emboitement fuselage sup : OK
-// check vis support fixation bottom fuselage :OK
-// Pb magnet fixation upper fuselage plus profond + taille magnet profondeur rentre pas : OK
-// Rear ct part to grid : OK
-
-
-// Transition avant uniquement sur le dessus : OK
-// pitot trop long + diametre incorrect : OK
-// augmenter hauteur fuselage superieur passage batterie : OK
-// Nozzle transition => check ? max Y dimension, set a value ? Incorporate with the screw magnet pitot rear motor et center part weird stuff rear motor shit OK
-
-//todo 
-     // Center part length ? change ? design impact ?
-     // Center part and fuselage hole 
-    ///    rear_motor_screw_removal();
-     //   rear_motor_cable_passage(); 
-     //       rear_fuselage_block_grid(); 
-     //rear_fuselage_block (aero_grav_center, rear_offset = rear_fuselage_offset_support);
-// ASA test
-
 
 // Arm + center + fuselage => angle pitch comp
 // Rear motor pitch or not ?
@@ -76,6 +48,8 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 // Test magnet insert
 // test pitot rad and length
 // test battery insertion
+// ASA test
+
 
 
 //Later :
@@ -96,7 +70,7 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 //****************Global Variables*****************//
 
 // Printing Mode : Choose which part of wings you want
-Full_system = true;
+Full_system = false;
 
 Left_side = true;
 Right_side = false;
@@ -118,8 +92,8 @@ Clamp_fixation_big = false;
 Clamp_fixation_small = false;
 Fuselage_front_part = false;
 Fuselage_bottom_back_part = false;
-Fuselage_upper_part = false;
-Full_fuselage = true;
+Fuselage_upper_part = true;
+Full_fuselage = false;
 
 //**************** Quality settings **********//
 draft_quality = false;
@@ -195,14 +169,14 @@ battery_x_pos_7 = 99;
 battery_x_pos_2 = 100;
 battery_x_pos_3 = 125;
 battery_x_pos_4 = 170;
-battery_x_pos_5 = 190;
+battery_x_pos_5 = 186;
 //Tawaki x offset on center part position
 tawaki_x_offset_pos = 100;
 //ESC x offset on center part position (from rear motor end)
 esc_x_offset_pos = 25;
 
 // === Fuselage Parameters ===
-nozzle_length = 70;
+nozzle_length = 100;
 tail_length = 0;
 fuselage_z_offset = center_width/2;
 L_total = center_length - main_stage_x_offset+ nozzle_length + tail_length;
@@ -212,7 +186,7 @@ rear_fuselage_offset_support = 5;
 // --- Derived radius ---
 R_front = 1; // nose radius
 R_max   = center_width   / 2; // max radius (will be enforced exactly)
-R_tail  = 2; // tail radius
+R_tail  = 5; // tail radius
 num       = 100;            // sections numbers (+ = smoother)
 fuselage_ellipse_param = [7,4.8]; //Super ellipse fuselage shape parameter [x,y]
 fuselage_scale_y = 1.3;//1.25; //Parameter use for scaling the fuselage on Y axis
@@ -849,7 +823,7 @@ module center_part_main(aero_grav_center, ct_width, ct_length, ct_height) {
         }//End Intersection
         
         //We remove the very end of fuselage to get the room for the fuselage tail block
-        rear_fuselage_block (aero_grav_center, hole = true);
+        rear_fuselage_block (aero_grav_center, hole = true, rear_offset = rear_fuselage_offset_support);
         //magnet for center part
         all_magnet(magnet_dimension,fuselage_mode = false);   
     }//End if
@@ -914,7 +888,11 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                         render(convexity=5) 
                         rear_fuselage_block (aero_grav_center, rear_offset = rear_fuselage_offset_support);
                 
-   
+                
+                // --- Remove some material to rear fuselage ---   
+                rear_fuselage_block_grid(); 
+                
+                
                 // --- Remove tube for Pitot ---
                 Create_pitot(pitot_radius, pitot_length, outside_diameter = false);
              
@@ -957,7 +935,6 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 cube([1000,1000,1000], center=true);      
 
    }//Enf of intersection
-   
 
         // --- We add overlapping transition between part  --- 
         if(Fuselage_upper_part)
@@ -1089,5 +1066,4 @@ else
     
 
 } //End if main
-
 

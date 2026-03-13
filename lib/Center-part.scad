@@ -517,8 +517,9 @@ module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
 //screw_clearance_hole parameter is used for create hole in center part to insert screws
 module fuselage_screw(x_pos, z_offset = 0, boss_height = 10, screw_clearance_hole = false) {
 
-    y_pos = center_height-main_stage_y_width - boss_height;
     boss_radius = 14;
+    y_pos = -center_height+main_stage_y_width;
+
 
     if(screw_clearance_hole == false) {    
     
@@ -604,8 +605,6 @@ module aeration_fuselage(flip = false) {
 // ------------------------
 // CENTER PART
 // ------------------------
-
-
 module center_part(aero_grav_center, ct_width, ct_length, ct_height, rear_motor_mode = false, shape_only_mode = false){    
 
 // 
@@ -654,7 +653,7 @@ mid_rear_x_offset = tawaki_esc_space + 2.5*esc_ext_pin_rad + mid_rear_x_length/2
 mid_rear_x_width = ct_width - 25; //Below ESC
 rear_x_length = ct_length- main_stage_x_offset - (tawaki_esc_space + 5*esc_ext_pin_rad + mid_rear_x_length) - front_offset;
 rear_x_offset = tawaki_esc_space + 5.5*esc_ext_pin_rad + mid_rear_x_length+ rear_x_length/2;
-rear_x_width = ct_width - 30;//15;
+rear_x_width = ct_width - 52;//30;
 one_front_length = ct_length- front_offset - rear_x_length - mid_rear_x_length -7.5*esc_ext_pin_rad;
 one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
 
@@ -712,7 +711,9 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
   
 
 
-
+// ============================================================
+//  grid_center_part — Tool module to Grid the Center Part 
+// ============================================================ 
 module grid_center_part(){
 
     union(){ //Union Object to withdraw
@@ -757,7 +758,9 @@ module grid_center_part(){
     }//End Union Object to withdraw
 }
 
-
+// ============================================================
+//  slot_grid — Tool module to design the grid
+// ============================================================ 
 module slot_grid(){
     translate([0, grid_z_offset, 0])
         rotate([0, 0, grid_angle])
@@ -775,7 +778,9 @@ module slot_grid(){
 
 
 
-
+// ============================================================
+//  cyl_with_fillet — Tool module to draw tawaki attach with fillet
+// ============================================================ 
 module cyl_with_fillet(h, r, fillet_r) {
 
     union() {
@@ -793,6 +798,10 @@ module cyl_with_fillet(h, r, fillet_r) {
     }
 }
 
+
+// ============================================================
+//  tawaki_pin_support — Tool module for tawaki pin 
+// ============================================================ 
 module tawaki_pin_support(){
 
 //Tawaki pin support definition 1                
@@ -832,6 +841,9 @@ module tawaki_pin_support(){
 }
 
 
+// ============================================================
+//  esc_pin_support — Tool module for ESC pin 
+// ============================================================ 
 module esc_pin_support(){
 
 //ESC pin support definition 1                
@@ -870,7 +882,9 @@ module esc_pin_support(){
 }
 
 
-
+// ============================================================
+//  rear_motor — Tool module for rear_motor
+// ============================================================ 
 module rear_motor(){
 
     screw_position = 6.5;
@@ -960,39 +974,44 @@ module rear_motor(){
 
 
 
-
-//Module use ofr removing center part and make room for rear motor cables
+// ============================================================
+//  rear_motor_cable_passage — Module use for removing center part and make room for rear motor cables
+// ============================================================ 
 module rear_motor_cable_passage (){
 
     cable_passage_radius = 3.5;
-    cable_passage_length = 20;    
+    cable_passage_length = 30;
+    z_adjust = 2.5;
     
-    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2  ,-center_width/4]) {
+    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2  ,-center_width/4 + z_adjust]) {
     
         rotate([0,90,0])
             cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50);  
             
-     /*   translate([-cable_passage_length/2,0,0])
+        translate([-cable_passage_length/2,0,0])
             rotate([0,0,90])
                 rotate([0,90,0])
                     cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
-*/
+
     }
     
-    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2  ,-3*center_width/4]) {
+    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2  ,-3*center_width/4 - z_adjust]) {
     
         rotate([0,90,0])
             cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50);  
             
-       /* translate([-cable_passage_length/2,0,0])
+        translate([-cable_passage_length/2,0,0])
             rotate([0,0,90])
                 rotate([0,90,0])
-                    cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); */
+                    cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
 
     }    
 }
 
 
+// ============================================================
+//  rear_motor_screw_removal — Module use for removing screw for rear motor in center part
+// ============================================================ 
 module rear_motor_screw_removal(){
 
     screw_position = 6.5;
@@ -1037,24 +1056,36 @@ module rear_motor_screw_removal(){
 
 }
 
-//Module use for remove part from rear motor fuselage
+
+// ============================================================
+//  rear_fuselage_block_grid — Module use for remove part from rear motor fuselage
+// ============================================================ 
 module rear_fuselage_block_grid(rear_offset = 2) {
 
 
     diameter = rear_motor_screw_distance+3*rear_motor_int_circ_attach_dist_to_ct/4;
     length = 10;
+    y_offset = 4;
     
 
-    translate([L_total -main_stage_x_offset - rear_offset + length/2,main_stage_y_width-center_height/2 + diameter/4,-center_width/2])  
+    translate([L_total -nozzle_length - rear_offset, main_stage_y_width-center_height/2 + diameter/4+ y_offset,-center_width/2])  
         
         rotate([0,90,0])
             cylinder(h = length,d = diameter, center = true);
+            
+            
+    translate([L_total -nozzle_length - rear_offset, -main_stage_y_width+center_height/2 -diameter/4- y_offset,-center_width/2])  
+        
+        rotate([0,90,0])
+            cylinder(h = length,d = diameter, center = true);            
 
 
 }
 
  
-
+// ============================================================
+//  main_stage_and_gravity_line — Module use to draw gravity line 
+// ============================================================ 
 module main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height){
 
         union(){
@@ -1078,6 +1109,9 @@ module main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_hei
 }  
  
 
+// ============================================================
+//  void_battery_holder — Module use to draw battery holder in Center part 
+// ============================================================  
 module void_battery_holder(ct_width, ct_length, ct_height){
 
     batt_6_hole_width = 3*battery_hole_width/4;
