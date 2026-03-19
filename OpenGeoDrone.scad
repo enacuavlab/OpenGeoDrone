@@ -40,9 +40,6 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-//stl generator
-// picture and gif vase method
-
 // Arm + center + fuselage => angle pitch comp
 // Rear motor pitch or not ?
 
@@ -72,7 +69,7 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 //****************Global Variables*****************//
 
 // Printing Mode : Choose which part of wings you want
-Full_system = false;
+Full_system = true;
 
 Left_side = true;
 Right_side = false;
@@ -86,14 +83,14 @@ Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
 
-Center_part = true;
+Center_part = false;
 Rear_motor_part = false;
 Clamp_fixation_big = false;
 Clamp_fixation_small = false;
 Fuselage_front_part = false;
 Fuselage_bottom_back_part = false;
 Fuselage_upper_part = false;
-Full_fuselage = true;
+Full_fuselage = false;
 
 // No use 
 Aileron_part = false;

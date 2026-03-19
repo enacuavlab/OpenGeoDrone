@@ -2,7 +2,7 @@
 # We use openscad-nightly which is the last version with Manifold
 # --backend=manifold We use Manifold rendering because it's way faster than CGAL
 
-SRC="Flyhigh.scad"
+SRC="OpenGeoDrone.scad"
 
 OUTDIR="stl_output"
 mkdir -p "$OUTDIR"
