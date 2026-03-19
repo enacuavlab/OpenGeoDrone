@@ -27,20 +27,20 @@ gravity_line_height = 0.2;
 //  P1 *         *      *
 //    *            ****
 //  P0*                 *P5
-//  |noze|...body...|queue|
+//  |nose|...body...|tail|
 //  t=0                    t=1
 //
 //  Control points layout:
-//    P0 = R_front                          (nose radius)
-//    P1 = P0 + P1_factor*(R_max-R_front)   (controls nose slope → C1)
-//    P2 = P0 + P2_factor*(R_max-R_front)   (controls rise speed)
+//    P0 = R_front                           (nose radius)
+//    P1 = P0 + P1_factor*(R_max-R_front)    (controls nose slope → C1)
+//    P2 = P0 + P2_factor*(R_max-R_front)    (controls rise speed)
 //    P3 = R_tail + P3_factor*(R_max-R_tail) (controls descent)
 //    P4 = R_tail + P4_factor*(R_max-R_tail) (controls tail slope → C1)
 //    P5 = R_tail + P5_factor*(R_max-R_tail) (tail radius)
 //
 //  C1 continuity:
-//    B'(0) = 5*(P1-P0) → smooth nose if P1 close to P0
-//    B'(1) = 5*(P5-P4) → smooth tail if P4 close to P5
+//    B'(0) = 5*(P1-P0) → smooth nose if P1 is close to P0
+//    B'(1) = 5*(P5-P4) → smooth tail if P4 is close to P5
 //
 //  Normalization:
 //    The curve is scaled so that max(R(t)) = R_max = center_width/2
@@ -48,24 +48,32 @@ gravity_line_height = 0.2;
 //
 //  CROSS SECTION (front view)
 //
-//        ry
-//      ------
-//     /      \
-//    |   rx   |   super-ellipse: |x/rx|^n + |y/ry|^n = 1
-//     \      /    n=2 → ellipse, n=4 → rounded rect, n→∞ → rectangle
-//      ------
+//          ry_top
+//        ------
+//       /      \
+//      |   rx   |   super-ellipse: |x/rx|^n + |y/ry|^n = 1
+//       \      /    n=2 → ellipse, n=4 → rounded rect, n→∞ → rectangle
+//        ------
+//          ry_bottom
 //
-//  fuselage_ellipse_param = [nx, ny] controls cross-section shape
-//  ry = rx * fuselage_scale_y  (constant flattening ratio)
+//  fuselage_ellipse_param  = [nx, ny] controls cross-section shape
+//  ry_top    = rx * fuselage_scale_y_top    (upper half vertical ratio)
+//  ry_bottom = rx * fuselage_scale_y_bottom (lower half vertical ratio)
+//
+//  The cross-section is vertically asymmetric:
+//    - points with sin(a) >= 0 (upper half) use fuselage_scale_y_top
+//    - points with sin(a) <  0 (lower half) use fuselage_scale_y_bottom
+//  Both halves meet seamlessly at y = 0 (sin(a) = 0).
 //
 // ============================================================
 
 // --- Global parameters (defined externally) ---
 // nozzle_length, tail_length, L_total  → fuselage_length
 // center_width                         → max fuselage diameter
-// num                                  → number of frames (smoothness)
-// nozzle_length, fuselage_z_offset → position
-// fuselage_scale_y                     → vertical flattening ratio
+// ct_part_frame_num                    → number of frames (smoothness)
+// nozzle_length, fuselage_z_offset     → position
+// fuselage_scale_y_top                 → upper half vertical scaling ratio
+// fuselage_scale_y_bottom              → lower half vertical scaling ratio
 // fuselage_ellipse_param               → super-ellipse exponents [nx, ny]
 
 
@@ -73,11 +81,11 @@ gravity_line_height = 0.2;
 // --- Bézier control point factors ---
 // Each factor is in [0,1]: 0 = at R_front/R_tail, 1 = at R_max
 // Tune these to change the fuselage shape
-P1_factor = 0.9;   // nose tangent — higher = steeper nose rise
-P2_factor = 0.6;   // rise speed  — higher = faster widening
-P3_factor = 0.85;  // descent     — higher = wider body kept longer
-P4_factor = 0.85;  // tail tangent — higher = slower tail taper
-P5_factor = 0.2;   // tail exit   — controls tail radius blending
+P1_factor = 0.9;   // nose tangent  — higher = steeper nose rise
+P2_factor = 0.6;   // rise speed    — higher = faster widening
+P3_factor = 0.85;  // descent       — higher = wider body kept longer
+P4_factor = 0.85;  // tail tangent  — higher = slower tail taper
+P5_factor = 0.2;   // tail exit     — controls tail radius blending
 
 
 
@@ -116,9 +124,22 @@ function bz5_max(p0,p1,p2,p3,p4,p5, n=500) =
     _bz5_max(p0,p1,p2,p3,p4,p5, 0, n, p0);
 
 // ============================================================
-//  Section generation [z, rx, ry]
-//  The curve is scaled so that max(rx) = R_max = center_width/2
+//  Section generation — returns array of [z, rx]
+//
+//  Iterates t from 0 to 1 in (ct_part_frame_num+1) steps.
+//  At each step:
+//    z  = t * fuselage_length   → longitudinal position along the body
+//    R  = bezier5(t, P0..P5)    → raw radius given by the Bézier curve
+//
+//  The raw curve is then normalized:
+//    scale = R_max / raw_max    → computed from a 500-sample numerical search
+//    rx    = scale * R          → ensures max(rx) == R_max exactly,
+//                                 regardless of control point factor values
+//
+//  Result: array of (ct_part_frame_num+1) pairs [z, rx], one per longitudinal station.
+//  Each pair will later become one frame (2D cross-section polygon).
 // ============================================================
+
 function fuselage_sections(bz5_P0, bz5_P1, bz5_P2, bz5_P3, bz5_P4, bz5_P5) =
     let(
         p0 = bz5_P0, p1 = bz5_P1, p2 = bz5_P2,
@@ -126,34 +147,70 @@ function fuselage_sections(bz5_P0, bz5_P1, bz5_P2, bz5_P3, bz5_P4, bz5_P5) =
         raw_max = bz5_max(p0,p1,p2,p3,p4,p5),
         scale   = R_max / raw_max
     )
-    [ for(i = [0 : num])
+    [ for(i = [0 : ct_part_frame_num])
         let(
-            t  = i / num,
-            z  = t * fuselage_length,
-            R  = scale * bezier5(t, p0,p1,p2,p3,p4,p5),
-            rx = R,
-            ry = R * fuselage_scale_y
+            t  = i / ct_part_frame_num,
+            z  = t * fuselage_length,   // longitudinal station position
+            R  = scale * bezier5(t, p0,p1,p2,p3,p4,p5)  // normalized radius
         )
-        [z, rx, ry]
+        [z, R]  // [longitudinal position, half-width radius]
     ];
 
 // ============================================================
-//  Frame — anisotropic super-ellipse cross-section
+//  Frame — asymmetric super-ellipse cross-section
+//
+//  Generates a 2D polygon at longitudinal position z, representing
+//  the fuselage cross-section at that station.
+//
+//  The shape is a super-ellipse parameterized by angle a (0°→360°):
+//
+//    ca = cos(a),  sa = sin(a)
+//
+//    x = rx · sign(ca) · |ca|^(2/nx)
+//    y = ry · sign(sa) · |sa|^(2/ny)
+//
+//  cos(a) drives the horizontal (x) coordinate: it spans [-1, +1]
+//  as a completes a full revolution, giving the left-right width rx.
+//  sin(a) drives the vertical (y) coordinate: positive in the upper
+//  half (0°<a<180°), negative in the lower half (180°<a<360°).
+//  The sign() + pow() formulation preserves the quadrant while
+//  applying the super-ellipse exponent, which "squares" the circle:
+//    n=2  → standard ellipse
+//    n=4  → rounded rectangle
+//    n→∞  → rectangle
+//
+//  Vertical asymmetry (top vs bottom):
+//    The sign of sa determines which half of the section is being
+//    computed. Two independent scale factors are applied:
+//      sa >= 0  →  ry = rx * fuselage_scale_y_top    (upper half)
+//      sa <  0  →  ry = rx * fuselage_scale_y_bottom (lower half)
+//    Both halves share the same rx and join seamlessly at y = 0
+//    (where sa = 0), ensuring C0 continuity across the junction.
+//
+//  The polygon is extruded to a near-zero thickness (hull_width)
+//  so that OpenSCAD's hull() can operate on it as a solid object.
 // ============================================================
 
-module frame(z, rx, ry, n=[4,4]) {
-    hull_width = 0.00001;
-    steps      = 100;
+module frame(z, rx, n=[4,4]) {
+    hull_width = 0.00001;  // near-zero thickness — frame exists only as a hull target
+    steps      = 100;      // number of polygon vertices — higher = smoother outline
     translate([0, 0, z])
         linear_extrude(h=hull_width, center=false)
             polygon(points=[
                 for(i = [0 : steps-1])
                     let(
-                        a  = 360 * i / steps,
-                        ca = cos(a),
-                        sa = sin(a),
-                        x  = rx * sign(ca) * pow(abs(ca), 2/n[0]),
-                        y  = ry * sign(sa) * pow(abs(sa), 2/n[1])
+                        a  = 360 * i / steps,  // angle sweeping 0°→360°
+                        ca = cos(a),            // horizontal component
+                        sa = sin(a),            // vertical component (sign = upper/lower half)
+                        // Upper half (sa >= 0) uses fuselage_scale_y_top,
+                        // lower half (sa <  0) uses fuselage_scale_y_bottom.
+                        // Both halves meet at y = 0 (sa = 0) — C0 continuity guaranteed.
+                        scale_y = (sa >= 0)
+                                  ? fuselage_scale_y_top
+                                  : fuselage_scale_y_bottom,
+                        ry = rx * scale_y,                            // vertical radius for this half
+                        x  = rx * sign(ca) * pow(abs(ca), 2/n[0]),   // super-ellipse x
+                        y  = ry * sign(sa) * pow(abs(sa), 2/n[1])    // super-ellipse y
                     )
                     [x, y]
             ]);
@@ -161,6 +218,23 @@ module frame(z, rx, ry, n=[4,4]) {
 
 // ============================================================
 //  Fuselage assembly — hull between consecutive frames
+//
+//  Builds the 3D fuselage skin by chaining hull() operations
+//  between every pair of adjacent frames:
+//
+//    for i in [0 .. ct_part_frame_num-1]:
+//      hull() { frame[i] ; frame[i+1] }
+//
+//  OpenSCAD's hull() computes the minimal convex envelope of the
+//  two thin polygons. Since both frames lie in parallel z-planes,
+//  the result is a smooth shell segment connecting
+//  the two cross-section shapes. With ct_part_frame_num = 100, this produces
+//  100 contiguous segments. Each segment shares its start plane
+//  with the end plane of the previous one, so the assembled
+//  surface is seamless and gap-free along the entire fuselage.
+//
+//  The assembly is then translated and rotated into the aircraft
+//  coordinate system.
 // ============================================================
 
 module fuselage() {
@@ -172,53 +246,53 @@ module fuselage() {
     bz5_P3 = R_tail  + P3_factor * (R_max - R_tail);
     bz5_P4 = R_tail  + P4_factor * (R_max - R_tail);
     bz5_P5 = R_tail  + P5_factor * (R_max - R_tail);
-    
+
     s = fuselage_sections(bz5_P0, bz5_P1, bz5_P2, bz5_P3, bz5_P4, bz5_P5);
     translate([-nozzle_length, 0, -fuselage_z_offset])
         rotate([0, 90, 0])
             for(i = [0 : len(s)-2])
                 hull() {
-                    frame(s[i][0],   s[i][1],   s[i][2],   fuselage_ellipse_param);
-                    frame(s[i+1][0], s[i+1][1], s[i+1][2], fuselage_ellipse_param);
+                    frame(s[i][0],   s[i][1],   fuselage_ellipse_param);
+                    frame(s[i+1][0], s[i+1][1], fuselage_ellipse_param);
                 }
 }
 
 // ============================================================
-//  Fuselage hulled — hull with wings, rear motor
+//  Fuselage hulled — hull joining fuselage, wings and rear motor
 // ============================================================
 
 module hulled_fuselage() {
 
-    // *** HULL  *** //
+    // *** HULL *** //
     hull() {
-    
-        render() // Use for simplification for calculation
+
+        render() // Render first for mesh simplification before hull computation
         fuselage();
-        
-        
-        // *** HULL from the FUSELAGE to WINGS LEFT PART *** //
-        intersection(){//We keep a wingshell slice 
-            render() // Use for simplification for calculation
+
+
+        // *** HULL from the FUSELAGE to the LEFT WING ROOT *** //
+        intersection() { // Keep only the wing shell slice at the root chord
+            render() // Render first for mesh simplification before hull computation
             wing_shell();
             translate([-2*wing_root_chord_mm,-2500,0])
                 cube([4*wing_root_chord_mm,5000,0.0001]);
-        }//End of intersection
-        
+        } // End of intersection
 
-        // *** HULL from the FUSELAGE to WINGS LEFT PART *** //
-        mirror([0, 0, 1]) 
+
+        // *** HULL from the FUSELAGE to the RIGHT WING ROOT *** //
+        mirror([0, 0, 1])
             translate([0, 0, center_width])
-                intersection(){//We keep a wingshell slice 
-                    render() // Use for simplification for calculation
+                intersection() { // Keep only the wing shell slice at the root chord
+                    render() // Render first for mesh simplification before hull computation
                     wing_shell();
                     translate([-2*wing_root_chord_mm,-2500,0])
                         cube([4*wing_root_chord_mm,5000,0.0001]);
-                }//End of intersection
-        
-        
-        
-    }//End of hull
-}
+                } // End of intersection
+
+
+    } // End of hull
+
+} // End of hulled_fuselage
 
 
 
@@ -427,6 +501,7 @@ module fuselage_magnet(x_pos, z_offset = 0, magnet_dim, shell_scale, fuselage_mo
 
     
     y_pos = main_stage_y_width + magnet_dim[2]*shell_scale;
+    y_mag_fuse_scale = 5;
 
     
     //magnet for fuselage 
@@ -436,7 +511,7 @@ module fuselage_magnet(x_pos, z_offset = 0, magnet_dim, shell_scale, fuselage_mo
                 difference(){
 
                     translate([0, -2*magnet_dim[2]/3, 0])
-                        linear_extrude(h=magnet_dim[2]*shell_scale*3, center=false)
+                        linear_extrude(h=magnet_dim[2]*shell_scale*y_mag_fuse_scale, center=false)
                             square([magnet_dim[0]*shell_scale,magnet_dim[1]*shell_scale], center = true, $fn=50);   
                     
 
@@ -478,15 +553,15 @@ module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
             union() {
             
             fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw);
-            fuselage_screw(x2_fuselage_screw, z_offset = z_fuselage_all_screw);
-            fuselage_screw(x3_fuselage_screw, z_offset = z_fuselage_all_screw);
-            fuselage_screw(x4_fuselage_screw, z_offset = z_fuselage_all_screw);
+            fuselage_screw(x2_fuselage_screw, z_offset = z2_fuselage_screw);
+            fuselage_screw(x3_fuselage_screw, z_offset = z3_fuselage_screw);
+            fuselage_screw(x4_fuselage_screw, z_offset = z4_fuselage_screw);
             mirror([0, 0, 1]) 
                 translate([0, 0, center_width]){
                     fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw);
-                    fuselage_screw(x2_fuselage_screw, z_offset = z_fuselage_all_screw);
-                    fuselage_screw(x3_fuselage_screw, z_offset = z_fuselage_all_screw);
-                    fuselage_screw(x4_fuselage_screw, z_offset = z_fuselage_all_screw);
+                    fuselage_screw(x2_fuselage_screw, z_offset = z2_fuselage_screw);
+                    fuselage_screw(x3_fuselage_screw, z_offset = z3_fuselage_screw);
+                    fuselage_screw(x4_fuselage_screw, z_offset = z4_fuselage_screw);
                 }//End of Translate
                 
                 
@@ -497,15 +572,15 @@ module all_fuselage_screws(boss_height = 10, screw_clearance_hole = false) {
     } if (screw_clearance_hole == true) {
     
             fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
-            fuselage_screw(x2_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
-            fuselage_screw(x3_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
-            fuselage_screw(x4_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x2_fuselage_screw, z_offset = z2_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x3_fuselage_screw, z_offset = z3_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
+            fuselage_screw(x4_fuselage_screw, z_offset = z4_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
             mirror([0, 0, 1]) 
                 translate([0, 0, center_width]){
                     fuselage_screw(x1_fuselage_screw, z_offset = z1_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
-                    fuselage_screw(x2_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
-                    fuselage_screw(x3_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
-                    fuselage_screw(x4_fuselage_screw, z_offset = z_fuselage_all_screw, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x2_fuselage_screw, z_offset = z2_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x3_fuselage_screw, z_offset = z3_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
+                    fuselage_screw(x4_fuselage_screw, z_offset = z4_fuselage_screw, screw_clearance_hole=screw_clearance_hole);
                 }//End of Translate
                 
     }
