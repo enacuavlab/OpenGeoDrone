@@ -3,8 +3,7 @@
 // Prior work used to create this script:
 // https://www.thingiverse.com/thing:3506692
 // https://github.com/guillaumef/openscad-airfoil
-
-
+ 
 //Tips
 // 1- If you want to add something into the wing, add a void offset around the part you want to add to avoid conflict with intern ribs during vase print  
 // 2- When spar hole is far from a edge and the vase circuit connection is too long, the system doesnt like and don't draw the spar hole. Use spar_flip_side parameter to orientate the vase circuit connection to the closest edge
@@ -40,6 +39,8 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
+// Screw bottom back and front diamter decrease
+
 // Arm + center + fuselage => angle pitch comp
 // Rear motor pitch or not ?
 

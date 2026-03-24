@@ -1,0 +1,254 @@
+solid OpenSCAD_Model
+  facet normal -1 0 0
+    outer loop
+      vertex 342.29999999999995 9 478
+      vertex 342.29999999999995 7 458
+      vertex 342.29999999999995 7 460
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 342.29999999999995 7 458
+      vertex 342.29999999999995 9 478
+      vertex 342.29999999999995 9 458
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 342.29999999999995 7 458
+      vertex 342.29999999999995 9 458
+      vertex 352.29999999999995 9 458
+    endloop
+  endfacet
+  facet normal 0 1 0
+    outer loop
+      vertex 342.29999999999995 9 458
+      vertex 342.29999999999995 9 478
+      vertex 352.29999999999995 9 458
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 342.29999999999995 9 478
+      vertex 342.29999999999995 7 460
+      vertex 342.29999999999995 7 476
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 342.29999999999995 7 476
+      vertex 342.29999999999995 7 478
+      vertex 342.29999999999995 9 478
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 342.29999999999995 7 476
+      vertex 342.29999999999995 7 460
+      vertex 352.29999999999995 7 476
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 342.29999999999995 9 478
+      vertex 342.29999999999995 7 478
+      vertex 352.29999999999995 7 478
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 342.29999999999995 7 458
+      vertex 352.29999999999995 9 458
+      vertex 352.29999999999995 7 458
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 352.29999999999995 7 476
+      vertex 342.29999999999995 7 460
+      vertex 352.29999999999995 7 460
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 352.29999999999995 9 458
+      vertex 352.29999999999995 7 460
+      vertex 352.29999999999995 7 458
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 352.29999999999995 9 458
+      vertex 352.29999999999995 7 476
+      vertex 352.29999999999995 7 460
+    endloop
+  endfacet
+  facet normal 0 1 0
+    outer loop
+      vertex 342.29999999999995 9 478
+      vertex 352.29999999999995 9 478
+      vertex 352.29999999999995 9 458
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 342.29999999999995 9 478
+      vertex 352.29999999999995 7 478
+      vertex 352.29999999999995 9 478
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 352.29999999999995 9 458
+      vertex 352.29999999999995 7 478
+      vertex 352.29999999999995 7 476
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 352.29999999999995 9 458
+      vertex 352.29999999999995 9 478
+      vertex 352.29999999999995 7 478
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 342.29999999999995 0 458
+      vertex 342.29999999999995 0 460
+      vertex 342.29999999999995 7 460
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 342.29999999999995 0 458
+      vertex 352.29999999999995 0 460
+      vertex 342.29999999999995 0 460
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 342.29999999999995 0 460
+      vertex 352.29999999999995 0 460
+      vertex 342.29999999999995 7 460
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 342.29999999999995 0 458
+      vertex 342.29999999999995 7 460
+      vertex 342.29999999999995 7 458
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 342.29999999999995 0 458
+      vertex 342.29999999999995 7 458
+      vertex 352.29999999999995 7 458
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 342.29999999999995 0 458
+      vertex 352.29999999999995 0 458
+      vertex 352.29999999999995 0 460
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 342.29999999999995 0 458
+      vertex 352.29999999999995 7 458
+      vertex 352.29999999999995 0 458
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 352.29999999999995 0 458
+      vertex 352.29999999999995 7 458
+      vertex 352.29999999999995 0 460
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 352.29999999999995 0 460
+      vertex 352.29999999999995 7 460
+      vertex 342.29999999999995 7 460
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 352.29999999999995 0 460
+      vertex 352.29999999999995 7 458
+      vertex 352.29999999999995 7 460
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 342.29999999999995 0 476
+      vertex 342.29999999999995 0 478
+      vertex 342.29999999999995 7 478
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 342.29999999999995 0 476
+      vertex 352.29999999999995 0 478
+      vertex 342.29999999999995 0 478
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 342.29999999999995 0 478
+      vertex 352.29999999999995 0 478
+      vertex 342.29999999999995 7 478
+    endloop
+  endfacet
+  facet normal -1 0 0
+    outer loop
+      vertex 342.29999999999995 0 476
+      vertex 342.29999999999995 7 478
+      vertex 342.29999999999995 7 476
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 342.29999999999995 0 476
+      vertex 342.29999999999995 7 476
+      vertex 352.29999999999995 7 476
+    endloop
+  endfacet
+  facet normal 0 -1 0
+    outer loop
+      vertex 342.29999999999995 0 476
+      vertex 352.29999999999995 0 476
+      vertex 352.29999999999995 0 478
+    endloop
+  endfacet
+  facet normal 0 0 -1
+    outer loop
+      vertex 342.29999999999995 0 476
+      vertex 352.29999999999995 7 476
+      vertex 352.29999999999995 0 476
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 352.29999999999995 0 476
+      vertex 352.29999999999995 7 476
+      vertex 352.29999999999995 0 478
+    endloop
+  endfacet
+  facet normal 0 0 1
+    outer loop
+      vertex 352.29999999999995 0 478
+      vertex 352.29999999999995 7 478
+      vertex 342.29999999999995 7 478
+    endloop
+  endfacet
+  facet normal 1 0 0
+    outer loop
+      vertex 352.29999999999995 0 478
+      vertex 352.29999999999995 7 476
+      vertex 352.29999999999995 7 478
+    endloop
+  endfacet
+endsolid OpenSCAD_Model
