@@ -132,3 +132,94 @@ module rotate_around_point(point, angles) {
             translate(point)
                 children();
 }
+
+//Module use to create a projection of the whole system in order to get the footprint of the drones
+module silouhette_projection_main(aero_grav_center) {
+rear_motor_square_support_attach_length_z = 34;    
+Display_pitot(pitot_radius, 60);  
+
+//Back motor place
+back_motor_place = 80;
+translate([center_length -main_stage_x_offset,main_stage_y_width-center_height/2  ,-center_width/2])
+    rotate([90,0,0])
+    linear_extrude(rear_motor_square_support_attach_width)
+    square([back_motor_place, rear_motor_square_support_attach_length_z], center=true);  
+    
+//Back propeller place
+back_prop_place = 40;
+back_prop_width = 116;
+translate([center_length -main_stage_x_offset + back_motor_place/2,main_stage_y_width-center_height/2  ,-center_width/2])
+    rotate([90,0,0])
+    linear_extrude(rear_motor_square_support_attach_width)
+    square([back_prop_place, 2*back_prop_width], center=true);  
+    
+    
+//Propellers    
+dxf_motor_base_radius = 15;
+dxf_motor_base_height = 20; 
+dxf_hoov_prop_width = 20;
+dxf_hoov_prop_length = 92;
+motor_arm_x_pos = aero_grav_center[1] + motor_arm_grav_center_offset;
+//BL
+translate([ motor_arm_x_pos + motor_arm_length_back, motor_arm_y_offset + motor_arm_height, wing_root_mm+ellipse_maj_ax]) {
+    rotate([ 0, 90 - motor_arm_tilt_angle, 90 ])
+            color("red")
+                linear_extrude(height = dxf_motor_base_height)
+                    circle(r = dxf_motor_base_radius, $fn=100);
+    rotate([90,0,0])
+    linear_extrude(height = dxf_motor_base_height)
+    square([dxf_hoov_prop_width, 2*dxf_hoov_prop_length], center=true);                      
+      
+} 
+
+//FL
+translate([ motor_arm_x_pos - motor_arm_length_front, motor_arm_y_offset + motor_arm_height, wing_root_mm+ellipse_maj_ax]) {
+    rotate([ 0, 90 - motor_arm_tilt_angle, 90 ])
+            color("red")
+                linear_extrude(height = dxf_motor_base_height)
+                    circle(r = dxf_motor_base_radius, $fn=100);
+    rotate([90,0,0])
+    linear_extrude(height = dxf_motor_base_height)
+    square([dxf_hoov_prop_width, 2*dxf_hoov_prop_length], center=true);                      
+      
+} 
+
+//FR
+mirror([0, 0, 1]) 
+    translate([0, 0, center_width]) 
+        translate([ motor_arm_x_pos - motor_arm_length_front, motor_arm_y_offset + motor_arm_height, wing_root_mm+ellipse_maj_ax]) {
+            rotate([ 0, 90 - motor_arm_tilt_angle, 90 ])
+                    color("red")
+                        linear_extrude(height = dxf_motor_base_height)
+                            circle(r = dxf_motor_base_radius, $fn=100);
+            rotate([90,0,0])
+            linear_extrude(height = dxf_motor_base_height)
+            square([dxf_hoov_prop_width, 2*dxf_hoov_prop_length], center=true); 
+        } 
+
+     
+//BR
+mirror([0, 0, 1]) 
+    translate([0, 0, center_width]) 
+        translate([ motor_arm_x_pos + motor_arm_length_back, motor_arm_y_offset + motor_arm_height, wing_root_mm+ellipse_maj_ax])  {
+            rotate([ 0, 90 - motor_arm_tilt_angle, 90 ])
+                    color("red")
+                        linear_extrude(height = dxf_motor_base_height)
+                            circle(r = dxf_motor_base_radius, $fn=100);
+            rotate([90,0,0])
+            linear_extrude(height = dxf_motor_base_height)
+            square([dxf_hoov_prop_width, 2*dxf_hoov_prop_length], center=true); 
+        } 
+   
+//Servo left
+    translate([servo_dist_le_mm+5, servo_dist_depth_mm, servo_dist_root_mm])
+        cube([50,30,40]);
+    
+//Servo right
+mirror([0, 0, 1]) 
+    translate([0, 0, center_width]) 
+        translate([servo_dist_le_mm+5, servo_dist_depth_mm, servo_dist_root_mm])
+            cube([50,30,40]);    
+
+            
+}

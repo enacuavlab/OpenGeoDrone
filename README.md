@@ -36,9 +36,10 @@ The aircraft is parametric end-to-end: wing span, chord, sweep, airfoil, motor p
 - **3 carbon fiber spars** per half-wing
 - **Pusher/puller motor** on a tilted arm
 - **2 Elevons** for roll control
-- **Mass**  1kg
 - **Center part dimensions** 275mmx90mm
-- **Hoovering** 30% throttle
+- **Mass**  1.066kg
+- **Payload mass**  1.15kg with 60% throttle in hoovering
+- **Hoovering** 34% throttle
 - **Min plane flying speed**  14m/s
 - **Wings easy to remove** no cables
 

@@ -1,6 +1,6 @@
 // TOP LEVEL Parameters
 rear_motor_square_support_attach_width = 4;
-rear_motor_square_support_attach_length_z = 34;
+rear_motor_square_support_attach_length_z = 38;//34;
 rear_motor_square_support_attach_length_y = 28;
 rear_motor_int_circle_r = 4.75;
 rear_motor_int_circ_attach_r = 1.5;
@@ -344,7 +344,18 @@ module Create_pitot(pitot_rad, pitot_len, outside_diameter = true) {
     }
 }
 
+module Display_pitot(pitot_rad, pitot_len, outside_diameter = true) {
 
+
+    pitot_translation = [-nozzle_length - pitot_len +2,0,-center_width/2];
+
+
+        translate(pitot_translation)
+            rotate([0,90,0])
+                cylinder(h=pitot_len, r=pitot_rad, center = false, $fn=50);       
+        
+ 
+}
 
 
 // ============================================================
@@ -730,12 +741,12 @@ rear_x_length = ct_length- main_stage_x_offset - (tawaki_esc_space + 5*esc_ext_p
 rear_x_offset = tawaki_esc_space + 5.5*esc_ext_pin_rad + mid_rear_x_length+ rear_x_length/2;
 rear_x_width = ct_width - 52;//30;
 one_front_length = ct_length- front_offset - rear_x_length - mid_rear_x_length -7.5*esc_ext_pin_rad;
+//one_front_length = front_offset + battery_x_pos_1 + main_stage_x_offset - battery_hole_length/2 - 3;
 one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
 
 
 
 
- 
 
         if(rear_motor_mode == false && shape_only_mode == false) {
 
@@ -746,11 +757,15 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
             difference(){ //Difference for battery holder   
             
             difference(){ //Difference for the grid   
-                main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height);
-                grid_center_part();
+                    main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height);
+
+                difference(){
+                    grid_center_part();
+                    fill_ct_part_for_cable_passage(ct_width, ct_length, ct_height);
+                }
             
             } // End Difference for the grid   
-             
+            
             void_battery_holder(ct_width, ct_length, ct_height);
             rear_motor_screw_removal();//Remove rear motor screw hole
             
@@ -761,6 +776,9 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
                        
             //*** Tawaki ***//
             tawaki_pin_support();
+            
+            //*** Clamp cable management ***//
+            cable_management_center_part(ct_width, ct_length, ct_height);
             
 
             } // End of translate
@@ -804,8 +822,7 @@ module grid_center_part(){
             // Slot grid
             slot_grid();
         }
-        
-        
+
      //Rear Mid part below ESC  
     render(convexity=5) // Use for simplification for calculation
     translate([mid_rear_x_offset,0,-center_width/2])
@@ -963,7 +980,9 @@ module esc_pin_support(){
 module rear_motor(){
 
     screw_position = 6.5;
-    z_screw_position_offset = 5.5;
+    z_screw_position_offset = rear_motor_screw_distance/2;
+    //Use to increase the hole of screws btw rear motor part and center part
+    rear_motor_screw_to_ct_part = 1.1*rear_motor_int_circ_attach_r;
 
     
     translate([ct_length -main_stage_x_offset,main_stage_y_width-center_height/2  ,-ct_width/2])
@@ -1020,25 +1039,25 @@ module rear_motor(){
                 translate([-z_screw_position_offset-rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([-rear_motor_int_circ_attach_r,-0,0]) 
-                circle(r = rear_motor_int_circ_attach_r);           
+                circle(r = rear_motor_screw_to_ct_part);           
             } 
         } 
                 translate([-z_screw_position_offset-rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([rear_motor_int_circ_attach_r,-0,0]) 
-                circle(r = rear_motor_int_circ_attach_r);           
+                circle(r = rear_motor_screw_to_ct_part);           
             } 
         }         
                 translate([z_screw_position_offset+rear_motor_int_circ_attach_dist_to_ct,screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([-rear_motor_int_circ_attach_r,-0,0]) 
-                circle(r = rear_motor_int_circ_attach_r);           
+                circle(r = rear_motor_screw_to_ct_part);           
             } 
         } 
                 translate([z_screw_position_offset+rear_motor_int_circ_attach_dist_to_ct,-screw_position,0]){//Hole for screwing the rear motor
             rotate([0,0,90]){
                 translate([rear_motor_int_circ_attach_r,-0,0]) 
-                circle(r = rear_motor_int_circ_attach_r);           
+                circle(r = rear_motor_screw_to_ct_part);           
             } 
         }
         }// End of Linear Extrude
@@ -1054,7 +1073,7 @@ module rear_motor(){
 // ============================================================ 
 module rear_motor_cable_passage (){
 
-    cable_passage_radius = 3.5;
+    cable_passage_radius = 4.8;//3.5;
     cable_passage_length = 30;
     z_adjust = 2.5;
     
@@ -1183,11 +1202,33 @@ module main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_hei
      } // End of union 1
 }  
  
+// ============================================================
+//  fill_ct_part_for_cable_passage — Module use to add material for cable passage void
+// ============================================================  
+module fill_ct_part_for_cable_passage(ct_width, ct_length, ct_height){
+
+        scale_up = 4;
+        cable_passage_offset = 1.2*battery_hole_width;
+        
+        //Hole for cable passage at the same x place as the battery holder
+        translate([battery_x_pos_1-scale_up/2,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2 - cable_passage_offset-scale_up/2])  
+            color("green")
+                    cube([battery_hole_length+scale_up,4*ct_height, battery_hole_width+scale_up]);
+                    
+        //Hole for cable passage at the same x place as the battery holder
+        translate([battery_x_pos_1-scale_up/2,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2 + cable_passage_offset-scale_up/2])  
+            color("green")
+                    cube([battery_hole_length+scale_up,4*ct_height, battery_hole_width+scale_up]);                    
+
+}
+
 
 // ============================================================
 //  void_battery_holder — Module use to draw battery holder in Center part 
 // ============================================================  
 module void_battery_holder(ct_width, ct_length, ct_height){
+
+    cable_passage_offset = 1.2*battery_hole_width;
 
     batt_6_hole_width = 3*battery_hole_width/4;
     batt_6_z_offset = 1*battery_hole_width/4;
@@ -1195,6 +1236,16 @@ module void_battery_holder(ct_width, ct_length, ct_height){
     batt_5_z_offset = 2*battery_hole_width/5;    
 
      union(){ //Union for battery hole to attach to Center part
+        
+        //Hole for cable passage at the same x place as the battery holder
+        translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2 - cable_passage_offset])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
+                    
+        //Hole for cable passage at the same x place as the battery holder
+        translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2 + cable_passage_offset])  
+            color("green")
+                    cube([battery_hole_length,4*ct_height, battery_hole_width]);
 
         translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
             color("green")
@@ -1203,7 +1254,7 @@ module void_battery_holder(ct_width, ct_length, ct_height){
         translate([battery_x_pos_1,main_stage_y_width-2*ct_height,-ct_width/2 - battery_hole_width - battery_width/2])  
             color("green")
                     cube([battery_hole_length,4*ct_height, battery_hole_width]);
-                    
+                   
         translate([battery_x_pos_2,main_stage_y_width-2*ct_height,-ct_width/2 + battery_width/2])  
             color("green")
                     cube([battery_hole_length,4*ct_height, battery_hole_width]);
@@ -1257,3 +1308,76 @@ module void_battery_holder(ct_width, ct_length, ct_height){
 
 } 
  
+// ============================================================
+//  cable_management_center_part — Module use to clamp to attach cable for cable management
+// ============================================================   
+module cable_management_center_part(ct_width, ct_length, ct_height) {
+    
+    z_offset = 6;
+    
+    
+    //*** First cable clamp ***//
+    x_base = 5;
+    y_base = 3;
+    z_base = 5;
+    
+    x1_offset = 65;
+    y1_base_offset = main_stage_y_width;
+    z1_base_offset = -z_offset-z_base;
+    
+    translate([x1_offset,y1_base_offset,z1_base_offset])
+        cube([x_base,y_base,z_base]);
+    
+    
+    x_top = 5;
+    y_top = 3;
+    z_top = 14;
+
+    y1_top_offset = main_stage_y_width+y_base;
+    z1_top_offset = -z_offset-z_top;
+    
+    translate([x1_offset,y1_top_offset,z1_top_offset])
+        cube([x_top,y_top,z_top]);  
+        
+      
+   /*   
+    x1_reverse_offset = 62;
+    z1_reverse_base_offset = -z_offset-z_base - z_top;
+    
+    translate([x1_reverse_offset,y1_base_offset,z1_reverse_base_offset])
+        cube([x_base,y_base,z_base]);    
+      
+    z1_reverse_top_offset = -z_offset-z_top - z_base;
+    
+    translate([x1_reverse_offset,y1_top_offset,z1_reverse_top_offset])
+        cube([x_top,y_top,z_top]);*/
+
+    //*** mirror First cable clamp ***// 
+    mirror([0, 0, 1]) 
+            translate([0, 0, ct_width]) {  
+                translate([x1_offset,y1_base_offset,z1_base_offset])
+                    cube([x_base,y_base,z_base]); 
+            translate([x1_offset,y1_top_offset,z1_top_offset])
+                    cube([x_top,y_top,z_top]);  
+          } 
+    
+    
+    //*** Second cable clamp ***//
+  /*  x2_offset = 151;
+
+    translate([x2_offset,y1_base_offset,z1_base_offset])
+        cube([x_base,y_base,z_base]);
+        
+    translate([x2_offset,y1_top_offset,z1_top_offset])
+        cube([x_top,y_top,z_top]);   
+        */
+        
+    //*** mirror Second cable clamp ***// 
+  /*  mirror([0, 0, 1]) 
+            translate([0, 0, ct_width]) {  
+                translate([x2_offset,y1_base_offset,z1_base_offset])
+                    cube([x_base,y_base,z_base]); 
+            translate([x2_offset,y1_top_offset,z1_top_offset])
+                    cube([x_top,y_top,z_top]);  
+          }     */    
+} 

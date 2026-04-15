@@ -38,21 +38,22 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 
+
 // TODO
+// ASA test Fuselage
+
+//Validate 
 // Screw bottom back and front diamter decrease
-
-// Arm + center + fuselage => angle pitch comp
-// Rear motor pitch or not ?
-
-// A l'Impression :
-// Test magnet insert
-// test pitot rad and length
-// test battery insertion
-// ASA test
-
+// Screw hole rear motor attach to increase only in the attach part + éloigner trou fixation moteur arriere + trou passage cable moteur
+// pitot diam reduce
+// Battery holder change sortie cable + de place
+//increase size fuselage pour plus de place
+// Cable management
 
 
 //Later :
+// Arm + center + fuselage => angle pitch comp
+// Rear motor pitch or not ?
 // Technique clean Chat
 // Clean too much param
 // Ailerons module clean
@@ -63,14 +64,18 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 // Optimize wing grid and hole vs mass
 // NVL implementation
 
-
+//Test wing :
+// 0.45 + 5.8 et 6.8 => too tight
+// 0.45 + 6. et 7.05 => Too large
+// 0.35 + 5.8 et 6.8 => 1er : too tight, 2nd ok, 3rd too tight
+// 0.30 + 5.8 et 6.8 => Nice, a bit loose
 
 //*******************END***************************//
 
 //****************Global Variables*****************//
 
 // Printing Mode : Choose which part of wings you want
-Full_system = true;
+Full_system = false;
 
 Left_side = true;
 Right_side = false;
@@ -188,10 +193,10 @@ rear_fuselage_offset_support = 5;
 // --- Derived radius ---
 R_front = 1; // nose radius
 R_max   = center_width   / 2; // max radius (will be enforced exactly)
-R_tail  = 5; // tail radius
+R_tail  = 7;//5; // tail radius
 ct_part_frame_num       = 100;    // sections numbers (+ = smoother)
 fuselage_ellipse_param = [7,4.8]; //Super ellipse fuselage shape parameter [x,y]
-fuselage_scale_y_top    = 1.2;  //Parameter use for scaling the fuselage on Y axis top
+fuselage_scale_y_top    = 1.25;  //Parameter use for scaling the fuselage on Y axis top
 fuselage_scale_y_bottom = 1;  ///Parameter use for scaling the fuselage on Y axis bottom
 
 //Aeration Parameters
@@ -200,7 +205,7 @@ aeration_length = 20;
 x1_aeration = 45;
 x2_aeration =3*center_length/4; 
 //Fuselage screws position
-fuselage_screw_radius = 1.6;
+fuselage_screw_radius = 1.3;
 x1_fuselage_screw = -10;
 z1_fuselage_screw = -3;
 x2_fuselage_screw = 21;
@@ -215,7 +220,7 @@ x2_fuselage_magnet = 156;
 magnet_dimension = [5.5,5.5,1.2];
 z1_offset_magnet = -7;
 z2_offset_magnet = -6;
-pitot_radius = 2.5;
+pitot_radius = 2.4;//2.5;
 pitot_length = 15;
 // === Grid Parameters ===
 slot_width    = 2.5;     
@@ -223,7 +228,7 @@ slot_spacing  = 18;
 grid_angle    = 45;  
 grid_z_offset =20;
 //Rear motor screw separation
-rear_motor_screw_distance = 11;
+rear_motor_screw_distance = 14;//11;
 //******//
 
 
@@ -334,11 +339,12 @@ attached_z_offset = 2.5;
 debug_spar_hole = false;
 debug_spar_void = false;
 spar_num = 3;     // Number of spars for grid mode 2
-spar_length_offset_1 = wing_mm - wing_tip_mm - 2*attached_1_length + 13;
+spar_length_offset_1 = wing_mm - wing_tip_mm - 2*attached_1_length + 10; //13
 spar_length_offset_2 = wing_mm - wing_tip_mm - 2*attached_2_length - 50;
 spar_angle_fitting_coeff = 1.15; // Coeff to adjust the spar angle into the wing
-spar_circles_nb = 12; //Number of outer circle around spar to maintain the part
-spar_circle_holder = 0.25; //radius of outer circle around spar to maintain the part 0.25 too large and 0.30 too tight => 0.26 too tight
+spar_circles_nb = 6; //Number of outer circle around spar to maintain the part
+spar_circle_holder = 0.30;//0.35;//0.45;//0.25; //radius of outer circle around spar to maintain the part 0.25 too large and 0.30 too tight => 0.26 too tight
+spar_circle_holder_PETG = 0.35; //Different value for PETG as the foaming is different
 spar_inser_lgth_into_center_part = center_width/2;
 
 //*** Spar angle rotation to follow the sweep
@@ -347,23 +353,23 @@ sweep_angle = use_custom_lead_edge_sweep ? atan((spar_angle_fitting_coeff * lead
 //*** Spar 1
 spar_hole = true;                // Add a spar hole into the wing
 spar_hole_perc = 15;             // Percentage from leading edge
-spar_hole_size = 5.65;              // Size of the spar hole
+spar_hole_size = 5.8;//5.65 (R 2.825);              // Size of the spar hole
 spar_hole_length = use_custom_lead_edge_sweep ? spar_length_offset_1/cos(sweep_angle) : spar_length_offset_1; // length of the spar in mm
-spar_hole_offset = 7.0;//6.8;            // Adjust where the spar is located
+spar_hole_offset = 7.2;//7.0;//6.8;            // Adjust where the spar is located
 spar_hole_void_clearance = 2.1; // Clearance for the spar to grid interface(at least double extrusion width is usually needed)
 spar_flip_side_1 = false; // use to offset the spar attached on a side of the wing to the other
 
 //*** Spar 2
 spar_hole_perc_2 = 37;             
-spar_hole_size_2 = 5.6;             
+spar_hole_size_2 = 5.8;//5.6; (R 2.8);              
 spar_hole_length_2= use_custom_lead_edge_sweep ? spar_length_offset_2/cos(sweep_angle) : spar_length_offset_2; 
-spar_hole_offset_2 = 7.0;//6.8;            
+spar_hole_offset_2 = 7.2;//6.8;            
 spar_hole_void_clearance_2 = 2; 
 spar_flip_side_2 = false; 
 
 //*** Spar 3
 spar_hole_perc_3 = 75;            
-spar_hole_size_3 = 6.65;//5.6;              
+spar_hole_size_3 = 6.8;//6.85; //6.65;//5.6;              
 spar_hole_length_3= 0 + motor_arm_width + wing_root_mm;
 spar_hole_offset_3 = 0.3;          
 spar_hole_void_clearance_3 = 2;
@@ -388,7 +394,7 @@ root_cable_passage_main_perc = 24.7; //Hole position for cable passage from wing
 //**************** Servo settings **********// 
 create_servo = true; // It is important to check that your servo placement doesnt create any artifacts 
 servo_dimension_perso_void = [23,8,70];
-servo_dimension_perso = [23,8,27.3]; 
+servo_dimension_perso = [23,8,27.3]; //[23,8,27.3]; 
 all_pts_servo = get_trailing_edge_points();
 pt_start_servo = find_interpolated_point(wing_root_mm, all_pts_servo);
 servo_type = 4;           // 1=3.7g 2=5g 3=9g 4=perso
@@ -460,6 +466,7 @@ slice_gap_width = 0.01;//This is the gap in the outer skin.(smaller is better bu
 debug_leading_trailing_edge = false;
 debug_full_wing_points = false;
 opacity = 1;
+silouhette_projection = false;
 //******//
 
 //*******************END***************************//
@@ -673,7 +680,6 @@ module wing_spar_holes() {
                    spar_hole_length_2, wing_root_chord_mm, slice_gap_width,
                    spar_circles_nb, spar_circle_holder, spar_flip_side_2);
 
-    //CreateSparHole_square(sweep_angle_3rd_spar, spar_hole_offset_3, spar_hole_perc_3, spar_hole_size_3, spar_hole_length_3, wing_root_chord_mm, slice_gap_width, spar_circles_nb, spar_circle_holder, spar_flip_side_3);
     CreateSparHole(sweep_angle_3rd_spar, spar_hole_offset_3, spar_hole_perc_3, spar_hole_size_3,
                    spar_hole_length_3, wing_root_chord_mm, slice_gap_width,
                    spar_circles_nb, spar_circle_holder, spar_flip_side_3);                   
@@ -760,7 +766,7 @@ module motor_arm_main(aero_grav_center) {
         difference() {
                  
             CreateMotorArm(aero_grav_center);                   
-            wing_spar_holes(); //We remove the spar from the motor arms           
+            motor_arm_spar_holes(); //We remove the spar from the motor arms           
             if (create_servo) {
             servo_void_block(); //We remove the servo from the motor arms
             servo_horn_connection(true);
@@ -772,7 +778,20 @@ module motor_arm_main(aero_grav_center) {
 
 }
 
+//Create holes for motor arms
+module motor_arm_spar_holes() {
+    CreateSparHole(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size,
+                   spar_hole_length, wing_root_chord_mm, slice_gap_width,
+                   spar_circles_nb, spar_circle_holder_PETG, spar_flip_side_1);
 
+    CreateSparHole(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2,
+                   spar_hole_length_2, wing_root_chord_mm, slice_gap_width,
+                   spar_circles_nb, spar_circle_holder_PETG, spar_flip_side_2);
+
+    CreateSparHole(sweep_angle_3rd_spar, spar_hole_offset_3, spar_hole_perc_3, spar_hole_size_3,
+                   spar_hole_length_3, wing_root_chord_mm, slice_gap_width,
+                   spar_circles_nb, spar_circle_holder_PETG, spar_flip_side_3);                   
+}
 //-----------------------------------------------------------
 // MAIN WINGLET MODULE
 //-----------------------------------------------------------
@@ -954,19 +973,19 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
 // SPAR VOIDS
 //-----------------------------------------------------------
 module center_spar_holes(ct_width) {   
-    CreateSparHole_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder, spar_inser_lgth_into_center_part);
+    CreateSparHole_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part);
     
-    CreateSparHole_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder, spar_inser_lgth_into_center_part);
+    CreateSparHole_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part);
     
-    CreateSparHole_center(sweep_angle_3rd_spar, spar_hole_offset_3, spar_hole_perc_3, spar_hole_size_3, spar_hole_length_3, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder, spar_inser_lgth_into_center_part);    
+    CreateSparHole_center(sweep_angle_3rd_spar, spar_hole_offset_3, spar_hole_perc_3, spar_hole_size_3, spar_hole_length_3, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part);    
 }
 
-
-
+      
+      
 //-----------------------------------------------------------
 // MAIN 
 //-----------------------------------------------------------
-    
+module main() {
 if (wing_sections * 0.2 < slice_transisions) echo("ERROR: You should lower the amount of slice_transisions.");
 
 else if (center_airfoil_change_perc < 0 || center_airfoil_change_perc > 100) echo("ERROR: center_airfoil_change_perc has to be in a range of 0-100.");
@@ -1070,8 +1089,31 @@ else
     }
     
 
-} //End if main
+    
+    
+//-----------------------------------------------------------
+// Projection for DXF Format 
+//-----------------------------------------------------------
+if(silouhette_projection == true) {
+    silouhette_projection_main(aero_grav_center);
+}
 
-/*
-translate ([-500,main_stage_y_width+35,-500])
-cube([1000,0.1,1000]);*/
+
+
+
+} //End if main
+} //End of main
+
+
+//-----------------------------------------------------------
+// Projection for DXF Format 
+//-----------------------------------------------------------
+if(silouhette_projection == true) {
+    projection(cut = false)    
+        rotate([90, 0, 0])
+            main();
+} else {      
+    main();
+}
+
+
