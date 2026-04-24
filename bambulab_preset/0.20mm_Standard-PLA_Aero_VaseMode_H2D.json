@@ -1,0 +1,102 @@
+{
+    "bottom_shell_layers": "0",
+    "default_acceleration": [
+        "nil",
+        "nil",
+        "5000",
+        "nil",
+        "nil"
+    ],
+    "enable_overhang_speed": [
+        "nil",
+        "nil",
+        "0",
+        "nil",
+        "nil"
+    ],
+    "from": "User",
+    "gap_infill_speed": [
+        "nil",
+        "nil",
+        "50",
+        "nil",
+        "nil"
+    ],
+    "inherits": "0.20mm Standard @BBL H2D",
+    "initial_layer_infill_speed": [
+        "nil",
+        "nil",
+        "50",
+        "nil",
+        "nil"
+    ],
+    "inner_wall_speed": [
+        "nil",
+        "nil",
+        "50",
+        "nil",
+        "nil"
+    ],
+    "internal_solid_infill_speed": [
+        "nil",
+        "nil",
+        "50",
+        "nil",
+        "nil"
+    ],
+    "name": "0.20mm_Standard-PLA_Aero_VaseMode@BBL H2D",
+    "outer_wall_acceleration": [
+        "nil",
+        "nil",
+        "2000",
+        "nil",
+        "nil"
+    ],
+    "outer_wall_speed": [
+        "nil",
+        "nil",
+        "50",
+        "nil",
+        "nil"
+    ],
+    "print_extruder_id": [
+        "1",
+        "1",
+        "2",
+        "2",
+        "2"
+    ],
+    "print_extruder_variant": [
+        "Direct Drive Standard",
+        "Direct Drive High Flow",
+        "Direct Drive Standard",
+        "Direct Drive High Flow",
+        "Direct Drive TPU High Flow"
+    ],
+    "print_sequence": "by object",
+    "print_settings_id": "0.20mm_Standard-PLA_Aero_VaseMode@BBL H2D",
+    "skeleton_infill_density": "0%",
+    "skin_infill_density": "0%",
+    "slice_closing_radius": "0",
+    "slicing_mode": "even_odd",
+    "sparse_infill_density": "0%",
+    "sparse_infill_speed": [
+        "nil",
+        "nil",
+        "50",
+        "nil",
+        "nil"
+    ],
+    "spiral_mode": "1",
+    "top_shell_layers": "0",
+    "travel_speed": [
+        "nil",
+        "nil",
+        "250",
+        "nil",
+        "nil"
+    ],
+    "version": "2.5.0.14",
+    "wall_loops": "1",
+    "z_direction_outwall_speed_continuous": "0"
+}

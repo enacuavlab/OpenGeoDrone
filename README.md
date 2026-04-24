@@ -1,8 +1,8 @@
 # OpenGeoDrone — Parametric RC VTOL Generator
 
-> A fully parametric VTOL designed in OpenSCAD, built for **vase mode 3D printing**. The project generates a complete aircraft: wings with internal structure, a Bézier-profiled fuselage, motor arms, winglets, ailerons, and a center body — all printable without supports.
+> A fully parametric VTOL designed in OpenSCAD, built for **vase mode 3D printing**. The project generates a complete aircraft: wings with internal structure, a Bézier-profiled fuselage, motor arms, winglets, ailerons, and a center body.
 
-![OpenGeoDrone](git-images/im3.png)
+![OpenGeoDrone_inflight](git-images/picture_inflight.png)
 
 ---
 
@@ -25,6 +25,8 @@
 ## Overview
 
 OpenGeoDrone is a VTOL UAV designed entirely in OpenSCAD. The goal is to produce aerodynamically efficient, lightweight, and printable parts using the **spiral vase mode** of FDM slicers (also called "spiralize outer contour"). This mode prints the outer skin as a single continuous spiral — no retractions, no seams, very low weight.
+
+![OpenGeoDrone](git-images/im3.png)
 
 The aircraft is parametric end-to-end: wing span, chord, sweep, airfoil, motor position, spar count, aileron geometry, fuselage shape, and more are all driven by variables in a single file (`OpenGeoDrone.scad`). Changing one number regenerates every dependent part automatically.
 
