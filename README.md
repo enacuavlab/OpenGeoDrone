@@ -39,6 +39,12 @@ OpenGeoDrone is a VTOL UAV designed entirely in OpenSCAD. The goal is to produce
 
 The aircraft is parametric end-to-end: wing span, chord, sweep, airfoil, motor position, spar count, aileron geometry, fuselage shape, and more are all driven by variables in a single file (`OpenGeoDrone.scad`). Changing one number regenerates every dependent part automatically.
 
+**VTOL, Vertical Take-Off and Landing :**
+
+The aircraft takes off and lands using its four hovering motors. It flies like a plane thanks to a pusher motor and two elevons.
+
+![OpenGeoDrone_inflight](git-images/Plane.gif) ![OpenGeoDrone_inflight](git-images/Hoovering.gif)
+
 **Default aircraft specs (all configurable):**
 
 - **Half-wingspan**: 510 mm (total ~1200 mm + center body)
