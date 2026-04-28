@@ -6,6 +6,15 @@
 
 ---
 
+## Financial Support
+
+The development of the OpenGeoDrone was funded by the French National Research Agency (ANR, Agence Nationale de la Recherche) and the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) within the framework of the Franco-German research project FlyHigh (grant no. [grant number ENAC] and GR 5407/2-1)
+
+![Logo_German_Research_Foundation](git-images/Logo_German_Research_Foundation.png) 
+![ANR](git-images/ANR.png)
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
