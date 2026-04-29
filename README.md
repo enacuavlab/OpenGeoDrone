@@ -55,7 +55,7 @@ The aircraft takes off and lands using its four hovering motors. It flies like a
 - **2 Elevons** for roll control
 - **Center part dimensions** 275mmx90mm
 - **Mass**  1.066kg
-- **Payload mass**  1.15kg with 60% throttle in hoovering
+- **Payload mass**  1.15kg with 60% throttle in hovering
 - **Hoovering** 34% throttle
 - **Min plane flying speed**  14m/s
 - **Wings easy to remove** no cables
@@ -376,12 +376,16 @@ Finally, the module wraps the fuselage in a global `hull()` together with the in
 - Carbon fiber tube ⌀5.5 mm
 - Carbon fiber tube ⌀6.5 mm
 - Flight controller (e.g. Tawaki)
-- Servo
+- 2 Servo
 - RC
+- Pitot tube
+- GPS module and Modem to Ground station if needed
 - 4 Motors for hoovering (F40) 
-- 1 Motor for pusher (F60) 
 - 1 ESC 4 to 1 
+- 2 Propellers 7x4 and 2 reverse Propellers 7x4  
+- 1 Motor for pusher (low kV < 1200) 
 - 1 ESC for pusher 
+- 1 Propeller 9x6
 
 
 ### Assembly order
