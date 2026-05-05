@@ -40,7 +40,12 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
+// Quadrillage aile
+// not go to TE quadrillage
+// winglet embedded
+// Bug preview
 // ASA test Fuselage
+
 
 //Validate 
 // Screw bottom back and front diamter decrease
@@ -82,7 +87,7 @@ Right_side = false;
 
 // Choose one at a time
 Root_part = false;
-Mid_Aileron_part = false;
+Mid_Aileron_part = true;
 Tip_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
@@ -104,12 +109,13 @@ Mid_part = false;
 
 //**************** Quality settings **********//
 draft_quality = false;
-$fn = $preview ? 0.05 : 80;
-$fa = $preview ?  0.1 :  5;
-$fs = $preview ? 0.05 :  1;
+$fn = $preview ? 1 : 80;
+$fa = $preview ? 20  :  5;
+$fs = $preview ? 20 :  1;
 //$fa = draft_quality?1:5; //Maximum angle between two segments. → Smaller = more segments = smoother.
 //$fs = draft_quality?0.1:1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
-wing_sections = draft_quality?5:30; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
+//wing_sections = draft_quality?1:30;
+wing_sections = $preview ? 5:30; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
 
 
  
@@ -271,11 +277,11 @@ lead_edge_curve_y = [
 
 //**************** Grid settings **********//
 add_inner_grid = true; // true if you want to add the inner grid for 3d printing
-grid_mode = 2;           // Grid mode 1=diamond 2= spar and cross spars
+grid_mode = 1; //2;           // Grid mode 1=diamond 2= spar and cross spars
 create_rib_voids = false; // add holes to the ribs to decrease weight
 
 //Grid mode 1 settings
-grid_size_factor = 2; // changes the size of the inner grid blocks
+grid_size_factor = 15;//2; // changes the size of the inner grid blocks
 
 //Grid mode 2 settings
 spar_offset = 12;//15; // Offset the spars from the LE/TE
@@ -572,9 +578,10 @@ module wing_shell() {
 // INTERNAL STRUCTURE (grid, ribs, spars)
 //-----------------------------------------------------------
 module wing_inner_grid() {
+    render(convexity=5) 
     difference() {
         if (grid_mode == 1)
-            StructureGrid(wing_mm, wing_root_chord_mm, grid_size_factor);
+            StructureGrid(3*wing_mm, 3*wing_root_chord_mm, grid_size_factor);
         else
             StructureSparGrid(3 * wing_mm, wing_root_chord_mm, grid_size_factor,
                               spar_num, spar_offset, 3 * rib_num, rib_offset); //We multiply by 3 to to cover largely the whole wing
@@ -1115,5 +1122,4 @@ if(silouhette_projection == true) {
 } else {      
     main();
 }
-
 

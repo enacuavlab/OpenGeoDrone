@@ -81,6 +81,10 @@ module aerodynamic_gravity_center(wingspan, AC_CG_marg,  display_surface = false
         }
         sections = aero_grav_center[2];
         // Display results
+        // Print the total wing surface for 2 wings
+        print_surface = 2*do_sum(sections);
+        echo("Total Wing surface = ", print_surface/1000000, " m2");
+        
         if(grav_center_plot){
         for (i = [0 : len(sections) - 1])
             echo("Section", i, ": Area =", sections[i][0], "Dist LE -> center =", sections[i][1]);
