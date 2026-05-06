@@ -148,8 +148,10 @@ module CreateGridVoid(low_res = false)
                     pos = f(i, local_wing_sections, wing_mm);
                     npos = f(i + 1, local_wing_sections, wing_mm);
 
-                    y0 = use_custom_lead_edge_curve ? interpolate_y(pos) * curve_amplitude : 0;
-                    y1 = use_custom_lead_edge_curve ? interpolate_y(npos) * curve_amplitude : 0;
+                    //y0 = use_custom_lead_edge_curve ? interpolate_y(pos) * curve_amplitude : 0;
+                    //y1 = use_custom_lead_edge_curve ? interpolate_y(npos) * curve_amplitude : 0;
+                    y0 = use_custom_lead_edge_curve ? tip_dihedral_y(pos) : 0;
+                    y1 = use_custom_lead_edge_curve ? tip_dihedral_y(npos) : 0;
 
                     x_off0 = use_custom_lead_edge_sweep ? interpolate_x(pos) : 0;
                     x_off1 = use_custom_lead_edge_sweep ? interpolate_x(npos) : 0;
@@ -179,8 +181,10 @@ module CreateGridVoid(low_res = false)
                     pos = f(i, local_wing_sections, wing_mm);
                     npos = f(i + 1, local_wing_sections, wing_mm);
 
-                    y0 = use_custom_lead_edge_curve ? interpolate_y(pos) * curve_amplitude : 0;
-                    y1 = use_custom_lead_edge_curve ? interpolate_y(npos) * curve_amplitude : 0;
+                    //y0 = use_custom_lead_edge_curve ? interpolate_y(pos) * curve_amplitude : 0;
+                    //y1 = use_custom_lead_edge_curve ? interpolate_y(npos) * curve_amplitude : 0;
+                    y0 = use_custom_lead_edge_curve ? tip_dihedral_y(pos) : 0;
+                    y1 = use_custom_lead_edge_curve ? tip_dihedral_y(npos) : 0;                    
 
                     x_off0 = use_custom_lead_edge_sweep ? interpolate_x(pos) : 0;
                     x_off1 = use_custom_lead_edge_sweep ? interpolate_x(npos) : 0;

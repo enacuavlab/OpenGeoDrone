@@ -12,7 +12,7 @@ attach_x_bot = 10;
 attach_y_bot_winglet = 7; //Dimension here is different due to the wingtip which is thiner
 
  
-module clamp_fixation(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_wg_hull)
+module clamp_fixation(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_wg_hull, create_winglet_mode)
 {
     scale_up = 1;
     
@@ -53,23 +53,25 @@ module clamp_fixation(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_w
     
   
     // **** Mid to winglet part attach **** //
-    x4_offset_perc = clamp_mid_winglet_perc;
-    
-    x4_offset = x4_offset_perc / 100 * wing_root_chord - (attach_x_top*(scale_up-1)/2); // The last correction in the equation is to center after scale up
-    y4_offset = clamp_mid_winglet_y_offset;
-    z4_offset = wing_root + wing_mid_mm + motor_arm_wdth - winglet_to_wing_hull - 3*attach_z_top/4;
-    
-    // **** Mid to winglet part attach **** //
-    translate([x4_offset,y4_offset,z4_offset]) {
-        //scale(scale_up)
-        cube([attach_x_top*scale_up,attach_y_top*scale_up,attach_z_top]); // top part
-        translate([0,-attach_y_bot_winglet,0])
-            scale(scale_up)
-            cube([attach_x_bot,attach_y_bot_winglet,attach_z_bot]); // Bot left part
-        translate([0,-attach_y_bot_winglet,attach_z_top-attach_z_bot])
-            scale(scale_up)
-            cube([attach_x_bot,attach_y_bot_winglet,attach_z_bot]); // Bot left part    
-    }//End of transalte  
+    if(create_winglet_mode) {
+        x4_offset_perc = clamp_mid_winglet_perc;
+        
+        x4_offset = x4_offset_perc / 100 * wing_root_chord - (attach_x_top*(scale_up-1)/2); // The last correction in the equation is to center after scale up
+        y4_offset = clamp_mid_winglet_y_offset;
+        z4_offset = wing_root + wing_mid_mm + motor_arm_wdth - winglet_to_wing_hull - 3*attach_z_top/4;
+        
+        // **** Mid to winglet part attach **** //
+        translate([x4_offset,y4_offset,z4_offset]) {
+            //scale(scale_up)
+            cube([attach_x_top*scale_up,attach_y_top*scale_up,attach_z_top]); // top part
+            translate([0,-attach_y_bot_winglet,0])
+                scale(scale_up)
+                cube([attach_x_bot,attach_y_bot_winglet,attach_z_bot]); // Bot left part
+            translate([0,-attach_y_bot_winglet,attach_z_top-attach_z_bot])
+                scale(scale_up)
+                cube([attach_x_bot,attach_y_bot_winglet,attach_z_bot]); // Bot left part    
+        }//End of transalte
+    }//End if  
     
 }
 
@@ -145,7 +147,7 @@ module clamp_fuselage_remove(wing_root_chord, wing_root, motor_arm_wdth, motor_a
 }
 
 
-module clamp_fixation_removal(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_wg_hull)
+module clamp_fixation_removal(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_wg_hull, create_winglet_mode)
 {
     
     scale_up =1.1;
@@ -222,19 +224,21 @@ module clamp_fixation_removal(wing_root_chord, wing_root, motor_arm_wdth, motor_
     z4_offset = wing_root + wing_mid_mm + motor_arm_wdth - winglet_to_wing_hull - 3*attach_z_top/4;
     
     // **** Mid to winglet part attach **** //
-    translate([x4_offset,y4_offset,z4_offset]) {
-        //scale(scale_up)
-        cube([attach_x_top*scale_up,attach_y_top_removal*scale_up,attach_z_top]); // top part
-        translate([0,-attach_y_bot_winglet,0])
-            scale(scale_up)
-            cube([attach_x_bot,attach_y_bot_winglet,attach_z_bot]); // Bot left part
-        translate([0,-attach_y_bot_winglet,attach_z_top-attach_z_bot])
-            scale(scale_up)
-            cube([attach_x_bot,attach_y_bot_winglet,attach_z_bot]); // Bot left part    
-    }//End of transalte      
+    if(create_winglet_mode) {
+        translate([x4_offset,y4_offset,z4_offset]) {
+            //scale(scale_up)
+            cube([attach_x_top*scale_up,attach_y_top_removal*scale_up,attach_z_top]); // top part
+            translate([0,-attach_y_bot_winglet,0])
+                scale(scale_up)
+                cube([attach_x_bot,attach_y_bot_winglet,attach_z_bot]); // Bot left part
+            translate([0,-attach_y_bot_winglet,attach_z_top-attach_z_bot])
+                scale(scale_up)
+                cube([attach_x_bot,attach_y_bot_winglet,attach_z_bot]); // Bot left part    
+        }//End of transalte   
+     }//End if    
 }
 
-module clamp_fixation_void(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_wg_hull)
+module clamp_fixation_void(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_wg_hull, create_winglet_mode)
 {
 
     scale_up =1.5;
@@ -310,21 +314,23 @@ module clamp_fixation_void(wing_root_chord, wing_root, motor_arm_wdth, motor_arm
     
     
     // **** Mid to winglet part attach **** //
-    x4_offset_perc = clamp_mid_winglet_perc;
-    
-    x4_offset = x4_offset_perc / 100 * wing_root_chord - (attach_x_top*(scale_up-1)/2); // The last correction in the equation is to center after scale up
-    y4_offset = clamp_mid_winglet_y_offset;
-    z4_offset = wing_root + wing_mid_mm + motor_arm_wdth - winglet_to_wing_hull - 3*attach_z_top/4;
-    
-    // **** Mid to winglet part attach **** //
-    translate([x4_offset,y4_offset,z4_offset]) {
-        //scale(scale_up)
-        cube([attach_x_top*scale_up,attach_y_top_void*scale_up,attach_z_top]); // top part
-        translate([0,-attach_y_bot_winglet_void,0])
-            scale(scale_up)
-            cube([attach_x_bot,attach_y_bot_winglet_void,attach_z_bot]); // Bot left part
-        translate([0,-attach_y_bot_winglet_void,attach_z_top-attach_z_bot])
-            scale(scale_up)
-            cube([attach_x_bot,attach_y_bot_winglet_void,attach_z_bot]); // Bot left part    
-    }//End of transalte     
+    if(create_winglet_mode) {
+        x4_offset_perc = clamp_mid_winglet_perc;
+        
+        x4_offset = x4_offset_perc / 100 * wing_root_chord - (attach_x_top*(scale_up-1)/2); // The last correction in the equation is to center after scale up
+        y4_offset = clamp_mid_winglet_y_offset;
+        z4_offset = wing_root + wing_mid_mm + motor_arm_wdth - winglet_to_wing_hull - 3*attach_z_top/4;
+        
+        // **** Mid to winglet part attach **** //
+        translate([x4_offset,y4_offset,z4_offset]) {
+            //scale(scale_up)
+            cube([attach_x_top*scale_up,attach_y_top_void*scale_up,attach_z_top]); // top part
+            translate([0,-attach_y_bot_winglet_void,0])
+                scale(scale_up)
+                cube([attach_x_bot,attach_y_bot_winglet_void,attach_z_bot]); // Bot left part
+            translate([0,-attach_y_bot_winglet_void,attach_z_top-attach_z_bot])
+                scale(scale_up)
+                cube([attach_x_bot,attach_y_bot_winglet_void,attach_z_bot]); // Bot left part    
+        }//End of transalte     
+    }// End if
 }

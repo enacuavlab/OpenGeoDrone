@@ -101,9 +101,11 @@ module CreateWing(low_res = false)
             z0 = wing_section_mm * i;
             z1 = wing_section_mm * (i + 1);
 
-            y0 = use_custom_lead_edge_curve ? interpolate_y(z0) * curve_amplitude : 0;
-            y1 = use_custom_lead_edge_curve ? interpolate_y(z1) * curve_amplitude : 0;
-
+            //y0 = use_custom_lead_edge_curve ? interpolate_y(z0) * curve_amplitude : 0;
+            //y1 = use_custom_lead_edge_curve ? interpolate_y(z1) * curve_amplitude : 0;
+            y0 = use_custom_lead_edge_curve ? tip_dihedral_y(z0) : 0;
+            y1 = use_custom_lead_edge_curve ? tip_dihedral_y(z1) : 0;
+            
             x_off0 = use_custom_lead_edge_sweep ? interpolate_x(z0) : 0;
             x_off1 = use_custom_lead_edge_sweep ? interpolate_x(z1) : 0;
 
@@ -126,9 +128,11 @@ module CreateWing(low_res = false)
             z_pos = f(i, local_wing_sections, wing_mm);
             z_npos = f(i + 1, local_wing_sections, wing_mm);
 
-            y0 = use_custom_lead_edge_curve ? interpolate_y(z_pos) * curve_amplitude : 0;
-            y1 = use_custom_lead_edge_curve ? interpolate_y(z_npos) * curve_amplitude : 0;
-
+            //y0 = use_custom_lead_edge_curve ? interpolate_y(z_pos) * curve_amplitude : 0;
+            //y1 = use_custom_lead_edge_curve ? interpolate_y(z_npos) * curve_amplitude : 0;
+            y0 = use_custom_lead_edge_curve ? tip_dihedral_y(z_pos) : 0;
+            y1 = use_custom_lead_edge_curve ? tip_dihedral_y(z_npos) : 0;
+            
             x_off0 = use_custom_lead_edge_sweep ? interpolate_x(z_pos) : 0;
             x_off1 = use_custom_lead_edge_sweep ? interpolate_x(z_npos) : 0;
             translate([ wing_root_chord_mm * (wing_center_line_perc / 100), 0, 0 ]) union()
@@ -144,6 +148,89 @@ module CreateWing(low_res = false)
         }
     }
 }
+
+
+
+//-----------------------------------------------------------
+// WING SHELL CUT
+// Cuts the wing shell at a given chord percentage and keeps
+// either the Leading Edge or Trailing Edge side.
+//
+// Parameters:
+//   keep_side            : "LE" = keep leading edge side
+//                          "TE" = keep trailing edge side
+//   cut_perc             : cut position as % from LE (0=LE, 100=TE)
+//   local_wing_sections  : spanwise resolution (default = wing_sections)
+//-----------------------------------------------------------
+module WingShellCut(keep_side = "LE", cut_perc, local_wing_sections = wing_sections)
+{
+    // Spanwise length of each section slice
+    wing_section_mm = wing_mm / local_wing_sections;
+
+    // Global X offset applied to every section (chord center alignment)
+    global_x_offset = wing_root_chord_mm * (wing_center_line_perc / 100);
+
+    intersection() {
+
+        // ── Full wing shell ──────────────────────────────────────────
+        CreateWing();
+
+        // ── Cutting volume ───────────────────────────────────────────
+        // Built section by section so the cut plane correctly follows
+        // chord taper, sweep and tip dihedral along the span
+        union() {
+            for (i = [0 : local_wing_sections - 1]) {
+
+                // ── Spanwise Z positions for this slice ──────────────
+                z0 = (wing_mode == 1)
+                    ? wing_section_mm * i
+                    : f(i, local_wing_sections, wing_mm);
+
+                z1 = (wing_mode == 1)
+                    ? wing_section_mm * (i + 1)
+                    : f(i + 1, local_wing_sections, wing_mm);
+
+                // ── Chord length at each slice boundary ──────────────
+                chord0 = (wing_mode == 1)
+                    ? ChordLengthAtIndex(i, local_wing_sections)
+                    : ChordLengthAtEllipsePosition((wing_mm + 0.1), wing_root_chord_mm, z0);
+
+                chord1 = (wing_mode == 1)
+                    ? ChordLengthAtIndex(i + 1, local_wing_sections)
+                    : ChordLengthAtEllipsePosition((wing_mm + 0.1), wing_root_chord_mm, z1);
+
+                // ── X cut position in global coordinate space ────────
+                // Accounts for: chord percentage, chord center offset,
+                // global alignment offset, and leading edge sweep
+                x_cut0 = (cut_perc / 100) * chord0
+                       - (wing_center_line_perc / 100) * chord0
+                       + global_x_offset
+                       + (use_custom_lead_edge_sweep ? interpolate_x(z0) : 0);
+
+                x_cut1 = (cut_perc / 100) * chord1
+                       - (wing_center_line_perc / 100) * chord1
+                       + global_x_offset
+                       + (use_custom_lead_edge_sweep ? interpolate_x(z1) : 0);
+
+                // ── Y offset from tip dihedral at each boundary ──────
+                y0 = tip_dihedral_y(z0);
+                y1 = tip_dihedral_y(z1);
+
+                // ── Cutting box, hulled between the two slice planes ─
+                // "LE" : box spans [-500 → x_cut]  (keeps LE side)
+                // "TE" : box spans [x_cut → +500]  (keeps TE side)
+                hull() {
+                    translate([keep_side == "LE" ? -500 : x_cut0, y0 - 500, z0])
+                        cube([keep_side == "LE" ? 500 + x_cut0 : 500, 1000, 0.001]);
+
+                    translate([keep_side == "LE" ? -500 : x_cut1, y1 - 500, z1])
+                        cube([keep_side == "LE" ? 500 + x_cut1 : 500, 1000, 0.001]);
+                }
+            }
+        }
+    }
+}
+
 
 //****************Tools function for interpolation**********//
 // Y interpolation function from X (simple linear)
@@ -229,7 +316,8 @@ function trailing_edge_point(index, local_wing_sections) =
 
         //Sweep (X offset) and curve (Y offset)
         x_sweep = use_custom_lead_edge_sweep ? interpolate_x(z) : 0,
-        y_curve = use_custom_lead_edge_curve ? interpolate_y(z) * curve_amplitude : 0,
+        //y_curve = use_custom_lead_edge_curve ? interpolate_y(z) * curve_amplitude : 0,
+        y_curve = use_custom_lead_edge_curve ? tip_dihedral_y(z) : 0,
 
         //Global translation to align with the rest of the wing
         global_offset = [ wing_root_chord_mm * (wing_center_line_perc / 100), 0, 0 ],
@@ -283,7 +371,8 @@ function leading_edge_point(index, local_wing_sections) =
 
         // Sweep and curvature offsets
         x_sweep = use_custom_lead_edge_sweep ? interpolate_x(z) : 0,
-        y_curve = use_custom_lead_edge_curve ? interpolate_y(z) * curve_amplitude : 0,
+        //y_curve = use_custom_lead_edge_curve ? interpolate_y(z) * curve_amplitude : 0,
+        y_curve = use_custom_lead_edge_curve ? tip_dihedral_y(z) : 0,
 
         // Global offset
         global_offset = [ wing_root_chord_mm * (wing_center_line_perc / 100), 0, 0 ],
@@ -405,7 +494,8 @@ function airfoil_y_minmax_at(x, z, index, local_wing_sections) =
                                 
                     // Sweep and Curve
                     x_sweep = use_custom_lead_edge_sweep ? interpolate_x(z) : 0,
-                    y_curve = use_custom_lead_edge_curve ? interpolate_y(z) : 0,
+                    //y_curve = use_custom_lead_edge_curve ? interpolate_y(z) : 0,
+                    y_curve = use_custom_lead_edge_curve ? tip_dihedral_y(z) : 0,
                     p_swept = [p_rot[0] + x_sweep, p_rot[1] + y_curve * curve_amplitude],
 
                     // Global offset 
@@ -439,4 +529,17 @@ function airfoil_y_minmax_at(x, z, index, local_wing_sections) =
     )
     [x_updated, y_min, y_max];
 
-    
+
+
+//**************** dihedral wingtip — power equation **********//
+function tip_dihedral_y(z) =
+    let(
+        z_start = wing_root_mm + motor_arm_width + wing_mid_mm  // tip section start
+    )
+    (!use_tip_dihedral || z <= z_start) ? 0 :
+    let(
+        z_end     = wing_mm,
+        t         = (z - z_start) / max(z_end - z_start, 0.001),  // progression 0→1 in tip
+        t_clamped = min(t, 1)
+    )
+    tip_dihedral_amplitude * pow(t_clamped, tip_dihedral_exponent);    

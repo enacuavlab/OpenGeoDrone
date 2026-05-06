@@ -40,10 +40,11 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// Quadrillage aile
-// not go to TE quadrillage
-// winglet embedded
-// Bug preview
+// Quadrillage aile : OK
+// not go to TE quadrillage : OK
+// winglet embedded : OK
+// Bug preview : OK
+// increase section only in wingtip
 // ASA test Fuselage
 
 
@@ -109,13 +110,13 @@ Mid_part = false;
 
 //**************** Quality settings **********//
 draft_quality = false;
-$fn = $preview ? 1 : 80;
-$fa = $preview ? 20  :  5;
-$fs = $preview ? 20 :  1;
+$fn = $preview ? 1 : 150;
+$fa = $preview ? 20  :  1;
+$fs = $preview ? 20 :  0.1;
 //$fa = draft_quality?1:5; //Maximum angle between two segments. → Smaller = more segments = smoother.
 //$fs = draft_quality?0.1:1; //(fragment size): maximum length of a segment.→ Smaller = shorter segments = smoother.
 //wing_sections = draft_quality?1:30;
-wing_sections = $preview ? 5:30; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
+wing_sections = $preview ? 5:100; // more is higher resolution but higher processing. We decrease wing_sections for Full_system because it's too much elements just for display
 
 
  
@@ -157,7 +158,7 @@ gravity_line_y_offset = -1; // Y offset management on motor arm
 // Total length must do wing_mm
 motor_arm_width = 2*ellipse_maj_ax;
 wing_root_mm = 215;
-wing_mid_mm = 245;
+wing_mid_mm = 235;//245;
 wing_tip_mm = wing_mm - wing_root_mm - wing_mid_mm - motor_arm_width;
 AC_CG_margin = 10; //Margin between mean aerodynamic center and gravity center in percentage
 aerodyn_center_plot = false; //Black
@@ -255,7 +256,7 @@ lead_edge_sweep = [
 //******//
 
 //**************** Wing Y curve settings **********//
-use_custom_lead_edge_curve = false; 
+use_custom_lead_edge_curve = true; 
 curve_amplitude = 0.10;
 max_amplitude = 400;
 // ([z , y]
@@ -273,12 +274,16 @@ lead_edge_curve_y = [
   [wing_mm - 1*wing_tip_mm/10,   11*max_amplitude/10],
   [wing_mm - 0*wing_tip_mm/10,   14*max_amplitude/10] 
 ];
+use_tip_dihedral = true;        // true = active le dièdre sur la section tip
+tip_dihedral_amplitude = 30;    // Amplitude max en mm (hauteur à l'extrémité du tip)
+tip_dihedral_exponent  = 2;   // Forme : 1.0=linéaire | 1.5=doux-accéléré | 2.0=parabolique | 3.0+=tardif
 //******//
 
 //**************** Grid settings **********//
 add_inner_grid = true; // true if you want to add the inner grid for 3d printing
 grid_mode = 1; //2;           // Grid mode 1=diamond 2= spar and cross spars
 create_rib_voids = false; // add holes to the ribs to decrease weight
+pourcentage_grid_presence_from_LE_TE = 4;
 
 //Grid mode 1 settings
 grid_size_factor = 15;//2; // changes the size of the inner grid blocks
@@ -292,7 +297,7 @@ rib_offset = 3;   // Offset
 
 
 //**************** WINGLET settings **********//
-create_winglet = true;
+create_winglet = false;
 winglet_mode = 2;
 winglet_mm = 60;
 winglet_root_chord_mm = ChordLengthAtEllipsePosition((wing_mm + 0.1), wing_root_chord_mm, wing_root_mm + wing_mid_mm + motor_arm_width);
@@ -303,7 +308,6 @@ washout_deg_winglet = 1.5;         // how many degrees of washout you want 0 for
 washout_start_winglet = 60;      // where you would like the washout to start in mm from root
 washout_pivot_perc_winglet = 25; // Where the washout pivot point is percent from LE
 winglet_to_wing_hull = 5; //Length of hull for transition from winglet to wings
-winglet_arm_attach_to_wing = true;
 
 use_custom_lead_edge_sweep_winglet = true;
 lead_edge_sweep_winglet = [ // ([z , x]
@@ -429,7 +433,7 @@ bot_y_offset = 1.5;//1.8; //Offset on y axis connexion bottom side -> use it at 
 aileron_thickness = 32;           // Aileron dimension on X axis toward Leading Edge
 aileron_pin_hole_diameter = 1.5;  // Diameter of the pin hole fixing the aileron to wing
 aileron_pin_hole_length = 7;      // Length of the pin hole
-ailerons_z_end_offset = 3.5;
+ailerons_z_end_offset = 0.2;//3.5;
 aileron_cyl_radius = 6;  // Aileron void cylinder radius 
 aileron_reduction = 0; //2.5;            // Aileron size reduction to fit in the ailerons void with ease 
 cylindre_wing_dist_nosweep = 1;   // Distance offset between cylinder and cube to avoid discontinuities in cut
@@ -592,6 +596,8 @@ module wing_inner_grid() {
 
         wing_voids();      // servo, spar, aileron, and winglet voids
         CreateGridVoid();  // internal grid clearance for vase mode
+        WingShellCut(keep_side = "LE", cut_perc = pourcentage_grid_presence_from_LE_TE); //We remove the grid 5% from LE to have clean edge
+        WingShellCut(keep_side = "TE", cut_perc = 100 - pourcentage_grid_presence_from_LE_TE); //We remove the grid 5% from TE to have clean edge
     }
 }
 
@@ -606,7 +612,7 @@ module wing_voids() {
         if (create_winglet) Create_winglet_connection_void();
         if (root_cab_hole) root_cables_void_main(); 
         //if (create_servo) servo_void_block();
-        if (clamp_attach) clamp_fixation_void(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+        if (clamp_attach) clamp_fixation_void(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet);
     }
 }
 
@@ -619,7 +625,7 @@ module wing_modif(aero_grav_center) {
         if (create_winglet)
             Create_winglet_connection(cube_for_vase = true);
 
-        if (create_aileron && !Aileron_part && !Full_system)
+        //if (create_aileron && !Aileron_part && !Full_system)
             CreateAileronVoid(); //We create a gap between mid wing and ailerons in Mid_Aileron mode
 
         if (spar_hole) wing_spar_holes();
@@ -628,17 +634,16 @@ module wing_modif(aero_grav_center) {
         
         //if (motor_arm_attach_to_wing) motor_arm_to_wing_attach_void(aero_grav_center);
         
-        if (winglet_arm_attach_to_wing) {
-            //winglet_to_wing_hook_void(); 
+        if (create_winglet) 
             winglet_main(winglet_y_pos_void); //remove the overlapping part of wing on winglet
-        }
+        
         
         if (root_cab_hole) {
             root_cables_hole_main(); 
         }
         
         if (clamp_attach) {
-            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
+            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet); 
         }
 
     }
@@ -740,7 +745,8 @@ module root_cables_void_main() {
 module wing_cut_sections() {
     if (Aileron_part) cube_cut(wing_root_mm + motor_arm_width+motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull);
     if (Root_part) cube_cut(0, wing_root_mm - motor_arm_to_wing_hull);
-    if (Mid_part || Mid_Aileron_part) cube_cut(wing_root_mm + motor_arm_width+motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull);
+    if ((Mid_part || Mid_Aileron_part)&& create_winglet) cube_cut(wing_root_mm + motor_arm_width+motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull);
+    if ((Mid_part || Mid_Aileron_part)&& !create_winglet) cube_cut(wing_root_mm + motor_arm_width+motor_arm_to_wing_hull, wing_mid_mm-motor_arm_to_wing_hull + wing_tip_mm);
     if (Tip_part && !create_winglet)
         cube_cut(wing_root_mm + motor_arm_width + wing_mid_mm, wing_tip_mm);
 }
@@ -777,7 +783,7 @@ module motor_arm_main(aero_grav_center) {
             if (create_servo) {
             servo_void_block(); //We remove the servo from the motor arms
             servo_horn_connection(true);
-            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); //Clamp fixation btwn motor arm and wing
+            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet); //Clamp fixation btwn motor arm and wing
             }
                         
          }//End of difference
@@ -808,7 +814,7 @@ module winglet_main(winglet_y_p) {
         CreateWinglet(winglet_y_p);
         
         if (clamp_attach) {
-            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); //Remove clamp from winglet
+            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet); //Remove clamp from winglet
         }//End if
         
     } //End difference
@@ -830,12 +836,12 @@ module center_part_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 
                 union(){
                     center_spar_holes(ct_width);
-                    clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                    clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet);
                     fuselage_ct_part_cables_hole(root_cable_hole_width, root_cable_hole_perc, root_cable_hole_ellipse, root_cable_hole_offset, slice_gap_width, sweep_angle, root_cable_passage_arm_perc, root_cable_passage_main_perc, wing_mm, wing_root_mm, motor_arm_to_wing_hull, wing_root_chord_mm);
                     mirror([0, 0, 1])
                         translate([0, 0, ct_width]) {
                             center_spar_holes(ct_width);
-                            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                            clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet);
                             fuselage_ct_part_cables_hole(root_cable_hole_width, root_cable_hole_perc, root_cable_hole_ellipse, root_cable_hole_offset, slice_gap_width, sweep_angle, root_cable_passage_arm_perc, root_cable_passage_main_perc, wing_mm, wing_root_mm, motor_arm_to_wing_hull, wing_root_chord_mm);
                          }
                 }
@@ -903,11 +909,11 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
 
 
                 // --- Remove clamp fuselage to make some room for it ---
-                clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet);
                 clamp_fuselage_remove(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
                 mirror([0, 0, 1])
                     translate([0, 0, ct_width]) {
-                        clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);
+                        clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet);
                         clamp_fuselage_remove(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
                     }//End of translate
                   
@@ -1057,7 +1063,7 @@ else
         clamp_fixation_small(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
         mirror([0, 0, 1]) 
             translate([0, 0, center_width]) {
-                clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);   
+                clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet);   
                 clamp_fixation_small(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull);   
                 }   
     }       
@@ -1085,9 +1091,9 @@ else
     
     if(debug_cable_root_hole) root_cables_hole_main();  //Show cable root hole
 
-    if(debug_clamp_fixation_removal) clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); // Show Clamp fixation removal
+    if(debug_clamp_fixation_removal) clamp_fixation_removal(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet); // Show Clamp fixation removal
     
-    if(debug_clamp_fixation_void) clamp_fixation_void(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); // Show Clamp fixation void for inner structure
+    if(debug_clamp_fixation_void) clamp_fixation_void(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet); // Show Clamp fixation void for inner structure
 
     if (servo_show)
     {

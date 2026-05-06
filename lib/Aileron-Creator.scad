@@ -49,7 +49,7 @@ module CreateAileronVoid() {
             pt2 = full_pts[i + 1];
 
             hull() {
-                translate([pt1[0] - aileron_thickness - x_offset_aileron_cylinder_to_cube, pt1[1] - aileron_height / 2, pt1[2]])
+                translate([pt1[0] - aileron_thickness - x_offset_aileron_cylinder_to_cube, pt1[1] - aileron_height / 2, pt1[2]-1])
                     cube([x_offset_aileron_cylinder_to_cube + aileron_thickness+1, aileron_height, 1], center = false);
 
                 translate([pt2[0] - aileron_thickness-x_offset_aileron_cylinder_to_cube, pt2[1] - aileron_height / 2, pt2[2]-1]) // We withdraw 1 to stay in right dimension as the cube of z =1  is the extern limit 
