@@ -59,7 +59,8 @@ The aircraft takes off and lands using its four hovering motors. It flies like a
 - **Hoovering** 34% throttle
 - **Min plane flying speed**  14m/s
 - **Wings easy to remove** no cables
-- **Flight endurance ** 17min in plane mode with 2min Hovering
+- **Flight endurance ** 25min in plane mode with 90s Hovering with 4S 4Ah battery
+- **Inertial Matrix ** coming soon
 
 
 ![Parameters Overview](git-images/im4.png)
