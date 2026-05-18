@@ -19,7 +19,8 @@ The development of the OpenGeoDrone was funded by the French National Research A
 
 - [Overview](#overview)
 - [Repository Structure](#repository-structure)
-- [Quick Start](#quick-start)
+- [Print Tutorial](#print-tutorial)
+- [OpenSCAD Quick Start](#openscad-quick-start)
 - [How the Wings Are Built — The Vase Mode Method](#how-the-wings-are-built--the-vase-mode-method)
 - [How the Fuselage Is Built — C1 Quintic Bézier](#how-the-fuselage-is-built--c1-quintic-bézier)
 - [Parts to Print](#parts-to-print)
@@ -47,20 +48,25 @@ The aircraft takes off and lands using its four hovering motors. It flies like a
 
 **Default aircraft specs (all configurable):**
 
-- **Half-wingspan**: 510 mm (total ~1200 mm + center body)
-- **Root chord**: 210 mm
-- **Airfoil: MH61** (cambered, suitable for slow stable RC flight)
-- **3 carbon fiber spars** per half-wing
-- **Pusher/puller motor** on a tilted arm
-- **2 Elevons** for roll control
-- **Center part dimensions** 275mmx90mm
-- **Mass**  1.066kg
-- **Payload mass**  1.15kg with 60% throttle in hovering
-- **Hoovering** 34% throttle
-- **Min plane flying speed**  14m/s
-- **Wings easy to remove** no cables
-- **Flight endurance** 25min in plane mode with 90s Hovering with 4S 4Ah battery
-- **Inertial Matrix** coming soon
+| Specification | Value | 
+|-----------|-----------|
+| **Half-wingspan**     | 510 mm (total ~1200 mm + center body)     | 
+| **Mass without battery**     | 1.066kg   |
+| **Max payload mass**     | 1.15kg with 60% throttle in hovering    |
+| **Flight endurance**     | 25min in plane mode with 90s Hovering with 4S 4Ah battery   |
+| **Min plane flying speed**     | 14m/s   |
+| **Hoovering**     | 34% throttle    |
+| **Root chord**     | 210 mm    |
+| **Airfoil **      | MH61 (cambered, suitable for slow stable RC flight)   |
+| **carbon fiber spars**     | 5 (2 per half-wing + 1)    |
+| **Motors**     | 4 hovering motors on tilted arms + one rear pusher    |
+| **Elevons**     | 2 for pitch and roll control    |
+| **Center part dimensions**     | 275mmx90mm  |
+| **Wings easy to remove**     | no cables   |
+| **Inertial Matrix**     | coming soon    |
+| **Hovering power with 4S**     | 400W   |
+| **Plane power with 4S**     | 90W    |
+
 
 
 ![Parameters Overview](git-images/im4.png)
@@ -68,6 +74,92 @@ The aircraft takes off and lands using its four hovering motors. It flies like a
 **Differents parts:**
 
 ![Parts Overview](git-images/im5.png)
+
+---
+
+## Print Tutorial
+
+Every parts of the plane are printable. STL files are accessible in `stl_print_part` directory and the bambulab preset for X1C and H2D are available in `bambulab_preset` directory. It is also possible to print directly the project with the 3mf format in the `3mf_print_part` directory.
+
+Use a **0.4mm nozzle** for all prints.
+
+### 1st Method : 3mf format print method
+
+It will load automatically the Bambulab preset on H2D or X1C.You can find this files in the folder `3mf_print_part`
+
+**For X1C or H2D** : 
+
+Use PLA Aero for :
+
+- X1C_Left_Root_part
+- X1C_Left_Mid_Aileron_part
+- X1C_Right_Root_part
+- X1C_Right_Mid_Aileron_part
+
+Use PETG Basic for :
+
+- X1C_Motor_Arms_and_sides
+- X1C_Fuselage_and_Clamps
+- X1C_Center_part
+
+You choose of course the part corresponding to your printer.
+
+### 2nd Method : STL format print method
+
+For PLA Aero Wings, use the `0.20mm_Standard-PLA_Aero_VaseMode_XXX.json` upon your printer and print the following parts.
+
+**PLA Aero Wings** :
+
+- Left_Root_part
+- Right_Root_part
+- Left_Mid_Aileron_part
+- Right_Mid_Aileron_part
+
+For Side parts, Clamps parts and Center body below, you can print it in PETG Basic in standard mode (0.20mm Standard)
+
+**Side parts** :
+
+- Left_Motor_arm_back
+- Left_Motor_arm_front
+- Right_Motor_arm_back
+- Right_Motor_arm_front
+- Left_Servo_horn
+- Right_Servo_horn
+
+**Clamps parts** :
+
+- 6 x Clamp_fixation_big
+
+**Center body** :
+
+- Center_part
+- Fuselage_bottom_back_part
+- Fuselage_front_part
+- Fuselage_upper_part
+- Rear_motor_part
+
+
+
+### Hardware (not printed)
+
+- Carbon fiber tube ⌀5.5 mm
+- Carbon fiber tube ⌀6.5 mm
+- Flight controller (e.g. Tawaki)
+- 2 Servo
+- RC
+- Pitot tube
+- GPS module and Modem to Ground station if needed
+- 4 Motors for hoovering (F40) 
+- 1 ESC 4 to 1 
+- 2 Propellers 7x4 and 2 reverse Propellers 7x4  
+- 1 Motor for pusher (low kV < 1200) 
+- 1 ESC for pusher 
+- 1 Propeller 9x6
+
+
+### Assembly order
+
+1. **TODO**
 
 ---
 
@@ -103,7 +195,7 @@ Vase_wing_openscad/
 
 ---
 
-## Quick Start
+## OpenSCAD Quick Start
 
 ### 1. Install OpenSCAD with the Manifold engine
 
@@ -260,7 +352,7 @@ OpenSCAD prints the required tube lengths to the console at render time:
 ### Step 5 — Elevons
 
 Elevons are sticked to the mid part :
-![Mid Aileron Part](git-images/im8.png)
+![Mid Aileron Part](git-images/im19.png)
 
 The connection between the mid part and the aileron is performed by a thin layer and tht actuation is done by the servo horn part connected to your servo:
 
@@ -270,13 +362,11 @@ The connection between the mid part and the aileron is performed by a thin layer
 
 
 
-### Step 6 — Winglet
+### Step 6 — Clamp
 
-The winglet is a small upswept surface at the wingtip, generated by the same lofting method as the main wing but using the NACA0008 symmetric airfoil and a higher sweep angle. It connects to the tip section via two embedded carbon rods that slot into matching voids and a small clamp :
+Clamp are used to hold parts together, insert them slowly into the 6 places :
 
-![Tip_Part](git-images/im11.png)
-
-![Clamp_fixation_small Part](git-images/im12.png)
+![Clamp_fixation Part](git-images/im12.png)
 
 ---
 
@@ -338,61 +428,6 @@ Finally, the module wraps the fuselage in a global `hull()` together with the in
 
 ![Assembly](git-images/im18.png)
 
----
-
-## Parts to Print
-
-### Wings
-
-- **Left_Root_part**
-- **Right_Root_part**
-- **Left_Mid_Aileron_part**
-- **Right_Mid_Aileron_part**
-
-### Side parts
-
-- **Left_Motor_arm_back**
-- **Left_Motor_arm_front**
-- **Right_Motor_arm_back**
-- **Right_Motor_arm_front**
-- **Left_Tip_part**
-- **Right_Tip_part**
-- **Left_Servo_horn**
-- **Right_Servo_horn**
-
-### Clamps parts
-
-- 6 x **Clamp_fixation_big**
-- 2 x **Clamp_fixation_small**
-
-### Center body
-
-- **Center_part**
-- **Fuselage_bottom_back_part**
-- **Fuselage_front_part**
-- **Fuselage_upper_part**
-- **Rear_motor_part**
-
-### Hardware (not printed)
-
-- Carbon fiber tube ⌀5.5 mm
-- Carbon fiber tube ⌀6.5 mm
-- Flight controller (e.g. Tawaki)
-- 2 Servo
-- RC
-- Pitot tube
-- GPS module and Modem to Ground station if needed
-- 4 Motors for hoovering (F40) 
-- 1 ESC 4 to 1 
-- 2 Propellers 7x4 and 2 reverse Propellers 7x4  
-- 1 Motor for pusher (low kV < 1200) 
-- 1 ESC for pusher 
-- 1 Propeller 9x6
-
-
-### Assembly order
-
-1. **TODO**
 
 ---
 
@@ -509,7 +544,7 @@ This project builds on and extends the following open-source work:
 - **[BouncyMonkey — Propeller Generator](https://www.thingiverse.com/thing:3506692)** — wing lofting and construction technique adapted here
 - **[guillaumef/openscad-airfoil](https://github.com/guillaumef/openscad-airfoil)** — Perl script and SCAD library for converting airfoil `.dat` files into OpenSCAD polygon paths
 - **[peterdsharpe/AeroSandbox](https://github.com/peterdsharpe/AeroSandbox)** — used to resample airfoil coordinate files to higher density for smoother printed curves
-- **[UIUC Airfoil Database](http://m-selig.ae.illinois.edu/ads/coord_database.html)** — source of MH45 and NACA airfoil coordinate data
+- **[UIUC Airfoil Database](http://m-selig.ae.illinois.edu/ads/coord_database.html)** — source of MH61 and NACA airfoil coordinate data
 
 ---
 

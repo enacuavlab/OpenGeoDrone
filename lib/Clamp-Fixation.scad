@@ -241,7 +241,7 @@ module clamp_fixation_removal(wing_root_chord, wing_root, motor_arm_wdth, motor_
 module clamp_fixation_void(wing_root_chord, wing_root, motor_arm_wdth, motor_arm_to_wg_hull, create_winglet_mode)
 {
 
-    scale_up =1.5;
+    scale_up =1.6;
     y_bottom_scale = 1.1; //Parameter to increase depth of void to avoid collision with inside structure
     
     attach_y_top_void = attach_y_top*5; // =10

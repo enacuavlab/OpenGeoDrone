@@ -40,55 +40,39 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 // TODO
-// Quadrillage aile : OK
-// not go to TE quadrillage : OK
-// winglet embedded : OK
-// Bug preview : OK
-// increase section only in wingtip
+// Decrease angle wingtip OK
+// increase section only in wingtip NOK
+// reduce mass center part 
 // ASA test Fuselage
+// Winggenerator
 
 
-//Validate 
-// Screw bottom back and front diamter decrease
-// Screw hole rear motor attach to increase only in the attach part + éloigner trou fixation moteur arriere + trou passage cable moteur
-// pitot diam reduce
-// Battery holder change sortie cable + de place
-//increase size fuselage pour plus de place
-// Cable management
+
 
 
 //Later :
 // Arm + center + fuselage => angle pitch comp
 // Rear motor pitch or not ?
-// Technique clean Chat
 // Clean too much param
 // Ailerons module clean
 // Try on Orca and add printer conf in git
 // Note on openscad nightly and manifold option
-// Readme and clean and comment function with parameters description
-// Structure Grid Mode 1 Adapat ? 
 // Optimize wing grid and hole vs mass
 // NVL implementation
-
-//Test wing :
-// 0.45 + 5.8 et 6.8 => too tight
-// 0.45 + 6. et 7.05 => Too large
-// 0.35 + 5.8 et 6.8 => 1er : too tight, 2nd ok, 3rd too tight
-// 0.30 + 5.8 et 6.8 => Nice, a bit loose
 
 //*******************END***************************//
 
 //****************Global Variables*****************//
 
 // Printing Mode : Choose which part of wings you want
-Full_system = false;
+Full_system = true;
 
 Left_side = true;
 Right_side = false;
 
 // Choose one at a time
-Root_part = false;
-Mid_Aileron_part = true;
+Root_part = true;
+Mid_Aileron_part = false;
 Tip_part = false;
 Motor_arm_full = false;
 Motor_arm_front = false;
@@ -125,7 +109,7 @@ echo(str("fa = ",$fa));
 echo(str("fs = ",$fs));
 
 //****************Wing Airfoil settings**********//
-wing_mm = 500;            // wing length in mm (= Half the wingspan)
+wing_mm = 490;            // wing length in mm (= Half the wingspan)
 wing_root_chord_mm = 210; // Root chord length in mm
 wing_tip_chord_mm = 110; // wing tip chord length in mm (Not relevant for elliptic wing);
 wing_center_line_perc = 70; // Percentage from the leading edge where you would like the wings center line
@@ -158,7 +142,7 @@ gravity_line_y_offset = -1; // Y offset management on motor arm
 // Total length must do wing_mm
 motor_arm_width = 2*ellipse_maj_ax;
 wing_root_mm = 215;
-wing_mid_mm = 235;//245;
+wing_mid_mm = 230;//245;
 wing_tip_mm = wing_mm - wing_root_mm - wing_mid_mm - motor_arm_width;
 AC_CG_margin = 10; //Margin between mean aerodynamic center and gravity center in percentage
 aerodyn_center_plot = false; //Black
@@ -274,9 +258,9 @@ lead_edge_curve_y = [
   [wing_mm - 1*wing_tip_mm/10,   11*max_amplitude/10],
   [wing_mm - 0*wing_tip_mm/10,   14*max_amplitude/10] 
 ];
-use_tip_dihedral = true;        // true = active le dièdre sur la section tip
-tip_dihedral_amplitude = 30;    // Amplitude max en mm (hauteur à l'extrémité du tip)
-tip_dihedral_exponent  = 2;   // Forme : 1.0=linéaire | 1.5=doux-accéléré | 2.0=parabolique | 3.0+=tardif
+use_tip_dihedral = true;        // true = enables dihedral on the tip section
+tip_dihedral_amplitude = 22;    // Maximum amplitude in mm (height at the tip end)
+tip_dihedral_exponent  = 1.7;     // Shape: 1.0=linear | 1.5=smooth-accelerated | 2.0=parabolic | 3.0+=late
 //******//
 
 //**************** Grid settings **********//
@@ -382,7 +366,7 @@ spar_hole_perc_3 = 75;
 spar_hole_size_3 = 6.8;//6.85; //6.65;//5.6;              
 spar_hole_length_3= 0 + motor_arm_width + wing_root_mm;
 spar_hole_offset_3 = 0.3;          
-spar_hole_void_clearance_3 = 2;
+spar_hole_void_clearance_3 = 3;
 spar_flip_side_3 = true; 
 sweep_angle_3rd_spar = 0;
 //******//

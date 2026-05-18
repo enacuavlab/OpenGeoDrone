@@ -4,14 +4,13 @@
 
 SRC="OpenGeoDrone.scad"
 
-OUTDIR="stl_output"
+OUTDIR="stl_print_part"
 mkdir -p "$OUTDIR"
 
 #Parts which to be printed in right and left side
 SIDE_PARTS=(
   Root_part
   Mid_Aileron_part
-  Tip_part
   Motor_arm_front
   Motor_arm_back
   Servo_horn
