@@ -37,10 +37,11 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 
 
 
-
-
 // TODO
-// Decrease angle wingtip OK
+// Readme : pictures update
+// Readme : Center of gravity before flying + check pitot etc
+// Readme : Where put payload
+// Readme : Inertial matrix
 // increase section only in wingtip NOK
 // reduce mass center part 
 // ASA test Fuselage
@@ -71,7 +72,7 @@ Left_side = true;
 Right_side = false;
 
 // Choose one at a time
-Root_part = true;
+Root_part = false;
 Mid_Aileron_part = false;
 Tip_part = false;
 Motor_arm_full = false;
@@ -122,8 +123,8 @@ pitch_trim = 0; //Parameter for global pitch trim on motor arm, fuselage, center
 
 
 //**************** Motor arm **********//
-ellipse_maj_ax = 9;        // ellipse's major axis (rayon z)
-ellipse_min_ax = 13;        // ellipse's minor axis (rayon y)
+ellipse_maj_ax = 8;//9;        // ellipse's major axis (rayon z)
+ellipse_min_ax = 10;//13;        // ellipse's minor axis (rayon y)
 motor_arm_length_front = 170;        // Tube length z
 motor_arm_length_back = 235;//210;        // Tube length z
 motor_arm_y_offset = 3;   //Offset on Y axis
@@ -153,9 +154,9 @@ gravity_center_plot = false; //Green
 //**************** Fuselage and center part **********//
 center_width = 90; //55;
 center_length = 275;
-center_height = 15;
-center_part_y_offset = 0;//1;
-main_stage_y_width = 2.2*center_height/3;
+center_height = 8.5;//15;
+center_part_y_offset = 0;//0;
+main_stage_y_width = 1.6*center_height/3;//2.2*center_height/3;
 main_stage_x_offset = center_length/10;
 battery_width = center_width -21;//-10; // Distance of battery holder void from extremity
 battery_hole_width = 8;
@@ -172,6 +173,11 @@ battery_x_pos_5 = 186;
 tawaki_x_offset_pos = 100;
 //ESC x offset on center part position (from rear motor end)
 esc_x_offset_pos = 25;
+// === Center Part Grid Parameters ===
+slot_width    = 1.5;//2.5;     
+slot_spacing  = 20;//18;     
+grid_angle    = 45;  
+grid_z_offset =20;
 
 // === Fuselage Parameters ===
 nozzle_length = 100;
@@ -195,6 +201,7 @@ aeration_width = 10;
 aeration_length = 20;
 x1_aeration = 45;
 x2_aeration =3*center_length/4; 
+y_aeration = 10;
 //Fuselage screws position
 fuselage_screw_radius = 1.3;
 x1_fuselage_screw = -10;
@@ -206,20 +213,16 @@ z3_fuselage_screw = -3;
 x4_fuselage_screw = 165;
 z4_fuselage_screw = -3;
 //Fuselage and center part magnet position
-x1_fuselage_magnet = 30;
+x1_fuselage_magnet = 14;//30;
 x2_fuselage_magnet = 156;
 magnet_dimension = [5.5,5.5,1.2];
 z1_offset_magnet = -7;
 z2_offset_magnet = -6;
 pitot_radius = 2.4;//2.5;
 pitot_length = 15;
-// === Grid Parameters ===
-slot_width    = 2.5;     
-slot_spacing  = 18;     
-grid_angle    = 45;  
-grid_z_offset =20;
 //Rear motor screw separation
 rear_motor_screw_distance = 14;//11;
+rear_motor_y_offset = 4;
 //******//
 
 
@@ -339,7 +342,9 @@ spar_angle_fitting_coeff = 1.15; // Coeff to adjust the spar angle into the wing
 spar_circles_nb = 6; //Number of outer circle around spar to maintain the part
 spar_circle_holder = 0.30;//0.35;//0.45;//0.25; //radius of outer circle around spar to maintain the part 0.25 too large and 0.30 too tight => 0.26 too tight
 spar_circle_holder_PETG = 0.35; //Different value for PETG as the foaming is different
-spar_inser_lgth_into_center_part = center_width/2;
+spar_inser_lgth_into_center_part_1 = battery_width/2.5 -2;
+spar_inser_lgth_into_center_part_2 = battery_width/2.5 -2;
+spar_inser_lgth_into_center_part_3 = center_width/2;
 
 //*** Spar angle rotation to follow the sweep
 sweep_angle = use_custom_lead_edge_sweep ? atan((spar_angle_fitting_coeff * lead_edge_sweep[len(lead_edge_sweep) - 1][1]) / lead_edge_sweep[len(lead_edge_sweep) - 1][0]) : 0;
@@ -379,7 +384,7 @@ root_cab_hole = true;
 root_cable_hole_width = 6;
 root_cable_hole_perc = 15.5;
 root_cable_hole_ellipse = 4;
-root_cable_hole_offset = 8.2;
+root_cable_hole_offset = 3;//8.2;
 root_cable_passage_arm_perc = 87.8; //Hole position for cable passage from wing to motor arm in percentage of wing chord
 root_cable_passage_main_perc = 24.7; //Hole position for cable passage from wing to main stage in percentage of wing chord
 //******//
@@ -461,7 +466,12 @@ debug_leading_trailing_edge = false;
 debug_full_wing_points = false;
 opacity = 1;
 silouhette_projection = false;
+
+//**************** Other settings **********//
+mapir_camera_hole = true;
 //******//
+
+
 
 //*******************END***************************//
 
@@ -487,6 +497,7 @@ include <lib/Tools.scad>
 include <lib/Winglet-Creator.scad>
 include <lib/Center-part.scad>
 include <lib/Clamp-Fixation.scad>
+include <lib/Instrument.scad>
 
 
     
@@ -889,9 +900,14 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                         center_part(aero_grav_center, ct_width, ct_length, ct_height, shape_only_mode = true);
                         
                 // --- Draw aeration points in fuselage ---
-                full_aeration_fuselage(x1_aeration, x2_aeration, ct_width, ct_height);
+                full_aeration_fuselage(x1_aeration, x2_aeration, y_aeration, ct_width, ct_height);
 
-
+                // --- Passage for the spars ---
+                hole_for_spars_1_2_fuselage_and_ct_part(ct_width);
+                
+                // --- Make room in fuselage for rear motor cable passage ---
+                rear_motor_cable_passage(y_axis_hole = false);
+                
                 // --- Remove clamp fuselage to make some room for it ---
                 clamp_fixation(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull, create_winglet);
                 clamp_fuselage_remove(wing_root_chord_mm, wing_root_mm, motor_arm_width, motor_arm_to_wing_hull); 
@@ -907,7 +923,7 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                     scale([1,1,1.1])
                         translate(pt_to_origin)
                         render(convexity=5) 
-                        rear_fuselage_block (aero_grav_center, rear_offset = rear_fuselage_offset_support);
+                        rear_fuselage_block (aero_grav_center, rear_offset = rear_fuselage_offset_support, screw = false);
                 
                 
                 // --- Remove some material to rear fuselage ---   
@@ -916,7 +932,9 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
                 
                 // --- Remove tube for Pitot ---
                 Create_pitot(pitot_radius, pitot_length, outside_diameter = false);
-             
+                // Remove hole for MAPIR Camera
+                if(mapir_camera_hole) 
+                    mapir_cam_hole();             
              
         }//End of difference
         
@@ -964,17 +982,20 @@ module fuselage_main(aero_grav_center, ct_width, ct_length, ct_height) {
         if(Fuselage_bottom_back_part)    
             fuselage_bottom_front_transition(aero_grav_center, fuselage_mid_cut, overlap_length = 12);
             
+            
+
+            
 }
 
 //-----------------------------------------------------------
 // SPAR VOIDS
 //-----------------------------------------------------------
 module center_spar_holes(ct_width) {   
-    CreateSparHole_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part);
+    CreateSparHole_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_1);
     
-    CreateSparHole_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part);
+    CreateSparHole_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_2);
     
-    CreateSparHole_center(sweep_angle_3rd_spar, spar_hole_offset_3, spar_hole_perc_3, spar_hole_size_3, spar_hole_length_3, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part);    
+    CreateSparHole_center(sweep_angle_3rd_spar, spar_hole_offset_3, spar_hole_perc_3, spar_hole_size_3, spar_hole_length_3, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_3);    
 }
 
       
@@ -996,9 +1017,9 @@ else
     aero_grav_center = get_gravity_aero_center(AC_CG_margin);
     
     //**************** Spar Length for user **********//
-    echo(str("[SPAR] Spar 1 at ",spar_hole_perc,"% from LE is ", spar_hole_length + spar_inser_lgth_into_center_part, "mm length."));
-    echo(str("[SPAR] Spar 2 at ",spar_hole_perc_2,"% from LE is ", spar_hole_length_2 + spar_inser_lgth_into_center_part, "mm length."));    
-    echo(str("[SPAR] Spar 3 at ",spar_hole_perc_3,"% from LE is ", spar_hole_length_3 + spar_inser_lgth_into_center_part, "mm length."));        
+    echo(str("[SPAR] Spar 1 at ",spar_hole_perc,"% from LE is ", spar_hole_length + spar_inser_lgth_into_center_part_1, "mm length."));
+    echo(str("[SPAR] Spar 2 at ",spar_hole_perc_2,"% from LE is ", spar_hole_length_2 + spar_inser_lgth_into_center_part_2, "mm length."));    
+    echo(str("[SPAR] Spar 3 at ",spar_hole_perc_3,"% from LE is ", spar_hole_length_3 + spar_inser_lgth_into_center_part_3, "mm length."));        
    
     //**************** Wing **********//
     if(Full_system || Root_part || Mid_part || Tip_part || Aileron_part || Mid_Aileron_part){

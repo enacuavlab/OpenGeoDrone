@@ -186,6 +186,7 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
     x_pos_screw_short = cos(45) * (motor_footprint_short );
     y_pos_screw_short = sin(45) * (motor_footprint_short );
     motor_x_pos = aero_grav_center[1] + grav_center_offset;
+    motor_support_radius = motor_footprint_long;
 
     
     
@@ -232,13 +233,13 @@ module motor_arm(a_ellipse, b_ellipse, arm_length_front, arm_length_back, motor_
     translate([ motor_x_pos - arm_length_front, y_offset, wing_root_mm+a_ellipse])
         rotate([ 0, 90, 90 ])
             linear_extrude(height = motor_height+b_ellipse, scale = motor_support_scale)
-                circle(r = a_ellipse, $fn=100);
+                circle(r = motor_support_radius, $fn=100);
 
     //**************** Back arm **********//
     //Draw connexion arm to motor support
     translate([ motor_x_pos + arm_length_back, y_offset, wing_root_mm+a_ellipse])
         scale([1, b_ellipse/a_ellipse])
-           sphere(a_ellipse, $fn=100 );
+           sphere(motor_support_radius, $fn=100 );
 
     // Draw the motor support
     translate([ motor_x_pos + arm_length_back, y_offset, wing_root_mm+a_ellipse])

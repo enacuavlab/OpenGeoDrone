@@ -95,6 +95,17 @@ module CreateSparHole_center(sweep_ang, hole_offset, hole_perc, hole_size, hole_
 
 }
 
+module CreateSparHole_shell_center(sweep_ang, hole_offset, hole_perc, hole_size, hole_length, wing_root_chord, ct_width, circles_nb, spar_circle_holder, inser_lgth_into_center_part)
+{
+    translate([ 0, hole_offset, 0 ])    
+        color("red") translate([ hole_perc / 100 * wing_root_chord, 0, 0 ])
+            rotate([ 0, sweep_ang, 0 ]) //Spar angle rotation to follow the sweep    
+                translate([ 0, 0, - inser_lgth_into_center_part ])    
+                    //We create a circle with small outer circle to maintain our spar
+                    linear_extrude(height = hole_length)
+                            circle(r=hole_size / 2);
+}
+
 
 //Create hole in root part for cable passage
 module root_cables_hole(cable_hole_width, cable_hole_perc, cable_hole_ellipse, cable_hole_offset, slice_gap, sweep_ang, cable_passage_arm_perc, cable_passage_main_perc, wingmm, wing_rootmm, motorarm_to_winghull, wing_root_chordmm) {

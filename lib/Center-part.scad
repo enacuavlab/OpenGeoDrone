@@ -362,7 +362,7 @@ module Display_pitot(pitot_rad, pitot_len, outside_diameter = true) {
 //  rear_fuselage_block — Module used to create a small block at the end of the center part to stop the fuselage
 // ============================================================
 //Hole parameter is used when we draw the part to activate a hole drawing in the middle
-module rear_fuselage_block (aero_grav_center, rear_offset = 2, hole = false) {
+module rear_fuselage_block (aero_grav_center, rear_offset = 2, hole = false, screw = true) {
 
     cube_position = L_total- nozzle_length - rear_offset;
     difference() {
@@ -376,7 +376,8 @@ module rear_fuselage_block (aero_grav_center, rear_offset = 2, hole = false) {
                     
         }//End of intersection
         
-        rear_motor_screw_removal();
+        if(screw)
+            rear_motor_screw_removal();
         //we make room for rear motor cable 
         rear_motor_cable_passage(); 
         //We remove part to get smthg lighter and more aeration
@@ -511,7 +512,7 @@ module all_magnet(magnet_dim, fuselage_mode = true) {
 module fuselage_magnet(x_pos, z_offset = 0, magnet_dim, shell_scale, fuselage_mode) {
 
     
-    y_pos = main_stage_y_width + magnet_dim[2]*shell_scale;
+    y_pos = main_stage_y_width + center_part_y_offset + magnet_dim[2]*shell_scale;
     y_mag_fuse_scale = 5;
 
     
@@ -642,22 +643,22 @@ module fuselage_screw(x_pos, z_offset = 0, boss_height = 10, screw_clearance_hol
 // ============================================================
 //  full_aeration_fuselage — Tool module for fuselage aeration drawing 
 // ============================================================ 
-module full_aeration_fuselage(x1_aera, x2_aera, ct_width, ct_height) {
+module full_aeration_fuselage(x1_aera, x2_aera, y_aera, ct_width, ct_height) {
 
             //We Draw holes for aeration
-            translate([x1_aera,-ct_height,-3.5*ct_width/5])
+            translate([x1_aera,-ct_height - y_aera,-3.5*ct_width/5])
                 rotate([90,0,0])
                     aeration_fuselage();
 
-            translate([x1_aera,3*ct_height/2,-3.5*ct_width/5])
+            translate([x1_aera,3*ct_height/2 + y_aera,-3.5*ct_width/5])
                 rotate([90,0,0])
                     aeration_fuselage();  
 
-            translate([x2_aera,-ct_height,-3.5*ct_width/5])
+            translate([x2_aera,-ct_height - y_aera,-3.5*ct_width/5])
                 rotate([90,0,0])
                     aeration_fuselage(flip=true);
                 
-            translate([x2_aera,3*ct_height/2,-1.5*ct_width/5])
+            translate([x2_aera,3*ct_height/2 + y_aera,-1.5*ct_width/5])
                 rotate([90,0,0])
                     aeration_fuselage(flip=true);  
 
@@ -687,6 +688,27 @@ module aeration_fuselage(flip = false) {
                     linear_extrude(h=thickness, center = true)
                         polygon(points=triangle_points);                    
 }    
+
+
+// ============================================================
+//  grid_center_part — Tool module to Grid the Center Part 
+// ============================================================ 
+module hole_for_spars_1_2_fuselage_and_ct_part(ct_width){
+
+    //We create here the shell the spar 1&2 fixation on the Center part
+    CreateSparHole_shell_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size+2, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_1+2);
+    
+    CreateSparHole_shell_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2+2, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_2+2);    
+        
+    mirror([0, 0, 1])
+        translate([0, 0, ct_width]) {
+        CreateSparHole_shell_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size+2, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_1+2);
+        
+        CreateSparHole_shell_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2+2, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_2+2);                   
+        } 
+
+}
+
 
 // ------------------------
 // CENTER PART
@@ -756,8 +778,10 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
 
             difference(){ //Difference for battery holder   
             
-            difference(){ //Difference for the grid   
+            difference(){ //Difference for the grid  
+
                     main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height);
+    
 
                 difference(){
                     grid_center_part();
@@ -778,10 +802,13 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
             tawaki_pin_support();
             
             //*** Clamp cable management ***//
-            cable_management_center_part(ct_width, ct_length, ct_height);
+            //cable_management_center_part(ct_width, ct_length, ct_height);
             
 
             } // End of translate
+ 
+        hole_for_spars_1_2_fuselage_and_ct_part(ct_width);
+
         
         } //End if rear_motor_mode
 
@@ -789,6 +816,8 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
             translate([0,center_part_y_offset,0]) {
                 rear_motor();
             } // End of translate
+            
+            
     
         } //End if rear_motor_mode
         
@@ -797,8 +826,9 @@ one_front_offset = front_offset+ (one_front_length)/2 - main_stage_x_offset;
                     main_stage_and_gravity_line(aero_grav_center, ct_width, ct_length, ct_height);
 
         } //End if shape_only_mode
-        
-        
+           
+    
+       
  
    
   
@@ -817,7 +847,7 @@ module grid_center_part(){
         rotate([90, 0, 0])
         difference() {
             // Principal part
-            cube([one_front_length, front_x_width, 2*center_height], center = true);
+            cube([one_front_length, front_x_width, 5*center_height], center = true);
 
             // Slot grid
             slot_grid();
@@ -829,7 +859,7 @@ module grid_center_part(){
     rotate([90, 0, 0])
         difference() {
             // Principal part
-            cube([mid_rear_x_length, mid_rear_x_width, 2*center_height], center = true);
+            cube([mid_rear_x_length, mid_rear_x_width, 5*center_height], center = true);
 
             // Slot grid
             slot_grid();
@@ -841,7 +871,7 @@ module grid_center_part(){
         rotate([90, 0, 0])
             difference() {
                 // Principal part
-                cube([rear_x_length, rear_x_width, 2*center_height], center = true);
+                cube([rear_x_length, rear_x_width, 5*center_height], center = true);
 
                 // Slot grid
                 slot_grid();
@@ -985,7 +1015,7 @@ module rear_motor(){
     rear_motor_screw_to_ct_part = 1.1*rear_motor_int_circ_attach_r;
 
     
-    translate([ct_length -main_stage_x_offset,main_stage_y_width-center_height/2  ,-ct_width/2])
+    translate([ct_length -main_stage_x_offset,main_stage_y_width-center_height/2 +rear_motor_y_offset,-ct_width/2])
 
         rotate([0,90,0])
     difference(){
@@ -1071,35 +1101,38 @@ module rear_motor(){
 // ============================================================
 //  rear_motor_cable_passage — Module use for removing center part and make room for rear motor cables
 // ============================================================ 
-module rear_motor_cable_passage (){
+module rear_motor_cable_passage (y_axis_hole = true){
 
-    cable_passage_radius = 4.8;//3.5;
+    cable_passage_radius = 5;//4.8;
     cable_passage_length = 30;
     z_adjust = 2.5;
+    y_offset = 3;
     
-    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2  ,-center_width/4 + z_adjust]) {
+    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2 + y_offset,-center_width/4 + z_adjust]) {
     
         rotate([0,90,0])
-            cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50);  
+            cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
             
-        translate([-cable_passage_length/2,0,0])
-            rotate([0,0,90])
-                rotate([0,90,0])
-                    cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
+        if(y_axis_hole)    
+            translate([-cable_passage_length/2,0,0])
+                rotate([0,0,90])
+                    rotate([0,90,0])
+                        cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
 
     }
     
-    translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2  ,-3*center_width/4 - z_adjust]) {
-    
-        rotate([0,90,0])
-            cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50);  
-            
-        translate([-cable_passage_length/2,0,0])
-            rotate([0,0,90])
-                rotate([0,90,0])
-                    cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
+        translate([center_length -main_stage_x_offset-cable_passage_length/4,main_stage_y_width-center_height/2 +y_offset,-3*center_width/4 - z_adjust]) {
+        
+            rotate([0,90,0])
+                cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50);  
+                
+            if(y_axis_hole)     
+                translate([-cable_passage_length/2,0,0])
+                    rotate([0,0,90])
+                        rotate([0,90,0])
+                            cylinder(h=cable_passage_length, r=cable_passage_radius, center = true, $fn=50); 
 
-    }    
+        }    
 }
 
 
@@ -1113,7 +1146,7 @@ module rear_motor_screw_removal(){
     z_screw_position_offset = rear_motor_screw_distance/2;
 
     
-    translate([center_length -main_stage_x_offset- srew_hole_length,main_stage_y_width-center_height/2  ,-center_width/2])
+    translate([center_length -main_stage_x_offset- srew_hole_length,main_stage_y_width-center_height/2+rear_motor_y_offset,-center_width/2])
 
         rotate([0,90,0])
         linear_extrude(rear_motor_square_support_attach_width*3){
