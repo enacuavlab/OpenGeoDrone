@@ -360,7 +360,7 @@ module connection_mid_to_ailerons(connexion_void = false, ribs_void = false){
     circle_radius_small = cube_y/3; // Parameter for ellipse
     circ_pos_x = cube_x/2.4; //circle position x
     circ_pos_y = cube_y/8; //circle position y
-    bot_connection_gap_offset = cube_y/2; //gap parameter on bot side of gap between mid and ailerons
+    bot_connection_gap_offset = cube_y;//cube_y/2; //gap parameter on bot side of gap between mid and ailerons
     ribs_void_scale = 2;
 
 

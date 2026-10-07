@@ -696,15 +696,15 @@ module aeration_fuselage(flip = false) {
 module hole_for_spars_1_2_fuselage_and_ct_part(ct_width){
 
     //We create here the shell the spar 1&2 fixation on the Center part
-    CreateSparHole_shell_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size+2, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_1+2);
+    CreateSparHole_shell_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_shell_diameter + spar_hole_size, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_1+2);
     
-    CreateSparHole_shell_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2+2, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_2+2);    
+    CreateSparHole_shell_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_shell_diameter + spar_hole_size, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_2+2);    
         
     mirror([0, 0, 1])
         translate([0, 0, ct_width]) {
-        CreateSparHole_shell_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_size+2, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_1+2);
+        CreateSparHole_shell_center(sweep_angle, spar_hole_offset, spar_hole_perc, spar_hole_shell_diameter + spar_hole_size, spar_hole_length, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_1+2);
         
-        CreateSparHole_shell_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_size_2+2, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_2+2);                   
+        CreateSparHole_shell_center(sweep_angle, spar_hole_offset_2, spar_hole_perc_2, spar_hole_shell_diameter + spar_hole_size, spar_hole_length_2, wing_root_chord_mm, ct_width, spar_circles_nb, spar_circle_holder_PETG, spar_inser_lgth_into_center_part_2+2);                   
         } 
 
 }

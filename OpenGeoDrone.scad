@@ -42,8 +42,6 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 // Readme : Center of gravity before flying + check pitot etc
 // Readme : Where put payload
 // Readme : Inertial matrix
-// increase section only in wingtip NOK
-// reduce mass center part 
 // ASA test Fuselage
 // Winggenerator
 
@@ -66,7 +64,7 @@ module wingletAirfoilPolygon() {  airfoil_NACA0008();  }
 //****************Global Variables*****************//
 
 // Printing Mode : Choose which part of wings you want
-Full_system = true;
+Full_system = false;
 
 Left_side = true;
 Right_side = false;
@@ -80,7 +78,7 @@ Motor_arm_front = false;
 Motor_arm_back = false;
 Servo_horn = false;
 
-Center_part = false;
+Center_part = true;
 Rear_motor_part = false;
 Clamp_fixation_big = false;
 Clamp_fixation_small = false;
@@ -178,6 +176,7 @@ slot_width    = 1.5;//2.5;
 slot_spacing  = 20;//18;     
 grid_angle    = 45;  
 grid_z_offset =20;
+spar_hole_shell_diameter = 4; //Add spar_hole_shell_diameter to spar_hole_size for the 2 front spar holder on ct_part -> increase diameter of externe cylinder
 
 // === Fuselage Parameters ===
 nozzle_length = 100;
